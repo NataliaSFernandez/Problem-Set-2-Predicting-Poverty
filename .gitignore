@@ -48,5 +48,12 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-#Raw Data
-00_data/raw/*.csv
+# ── Datos crudos ──────────────────────
+data/raw/
+data/raw/*
+
+# ── Credenciales Kaggle ──────────────────────────────────────
+.kaggle/
+kaggle.json
+*.json
+
