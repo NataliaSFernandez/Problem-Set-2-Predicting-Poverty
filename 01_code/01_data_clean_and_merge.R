@@ -19,7 +19,9 @@
 #    4. Limpieza basica
 #    5. Agregados personas --> hogar
 #    6. Merge
-#    7. Variable objetivo (solo train)
+#    8. Seleccion y alineacion de columnas (excluir variables que no estan en test, o que definen el outcome)
+#    9. Diagnosticos basicos (NA, prevalencia)
+#    10. Guardado de datos limpios para EDA y modelado
 
 #
 #  Output: data/processed/train_final.rds
@@ -35,6 +37,8 @@ if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
   tidyverse,   # manipulacion de datos
   janitor,     # clean_names, tabyl
+  tidyr,       # pivot_longer/wider
+  dplyr,       # select, rename, mutate, group_by, summarise
   readr,
   skimr,       # resumen rapido de dataframes
   fs           # manejo de rutas
@@ -303,6 +307,188 @@ recodificar_personas <- function(df) {
 train_per <- recodificar_personas(train_per)
 test_per  <- recodificar_personas(test_per)
 
-
 # -- 5. Limpieza basica -----------------------------------------------------
 message("\n== Limpieza basica ==")
+ 
+limpiar_tipos <- function(df) {
+  df |>
+    mutate(across(where(is.numeric), ~ if_else(is.infinite(.), NA_real_, .))) |>
+    mutate(across(any_of(c("dpto", "ciudad")), factor))
+}
+ 
+train_hog <- limpiar_tipos(train_hog)
+test_hog  <- limpiar_tipos(test_hog)
+train_per <- limpiar_tipos(train_per)
+test_per  <- limpiar_tipos(test_per)
+
+# ==========================================================================
+# -- 6. Agregados personas --> hogar ---------------------------------------
+#  Se agregan SOLO las columnas presentes en test_personas.
+#  Se usa 'mujer' (0/1) en lugar de 'sexo' (1/2).
+# ==========================================================================
+
+message("\n== Agregando personas al nivel hogar ==")
+ 
+agregar_personas <- function(df) {
+  df |>
+    group_by(id) |>
+    summarise(
+ 
+      # -- Demografia
+      n_menores_18        = sum(edad < 18,  na.rm = TRUE),
+      n_adultos_may       = sum(edad >= 65, na.rm = TRUE),
+      edad_prom           = mean(edad, na.rm = TRUE),
+      edad_jefe           = first(edad[parentesco == 1]),
+      prop_mujeres        = mean(mujer, na.rm = TRUE),
+      ratio_depend        = (sum(edad < 15, na.rm = TRUE) +
+                             sum(edad >= 65, na.rm = TRUE)) /
+                            pmax(sum(edad >= 15 & edad < 65, na.rm = TRUE), 1),
+ 
+      # -- Educacion
+      nivel_educ_max      = suppressWarnings(max(nivel_educ, na.rm = TRUE)),
+      nivel_educ_jefe     = first(nivel_educ[parentesco == 1]),
+      nivel_educ_prom     = mean(nivel_educ, na.rm = TRUE),
+ 
+      # -- Mercado laboral (Pet/Oc/Des/Ina ya son 0/1)
+      n_ocupados          = sum(ocupado     == 1, na.rm = TRUE),
+      n_desempleados      = sum(desempleado == 1, na.rm = TRUE),
+      n_inactivos         = sum(inactivo    == 1, na.rm = TRUE),
+      tasa_ocupacion      = sum(ocupado == 1, na.rm = TRUE) /
+                            pmax(sum(pet == 1, na.rm = TRUE), 1),
+      tasa_desempleo      = sum(desempleado == 1, na.rm = TRUE) /
+                            pmax(sum(ocupado == 1,     na.rm = TRUE) +
+                                 sum(desempleado == 1, na.rm = TRUE), 1),
+ 
+      # -- Posicion ocupacional
+      prop_asalariado     = mean(posicion_ocup %in% c(1, 2),      na.rm = TRUE),
+      prop_cta_propia     = mean(posicion_ocup == 4,               na.rm = TRUE),
+      prop_informal       = mean(posicion_ocup %in% c(4, 6, 7, 8), na.rm = TRUE),
+ 
+      # -- Salud (afil_salud ya es 0/1)
+      prop_afil_salud     = mean(afil_salud == 1,      na.rm = TRUE),
+      prop_subsidiado     = mean(tipo_afil_salud == 3, na.rm = TRUE),
+ 
+      # -- Seguridad social y prestaciones
+      prop_cotiza_pension = mean(cotiza_pension == 1, na.rm = TRUE),
+      prop_prima_serv     = mean(recibio_prima_serv == 1, na.rm = TRUE),
+ 
+      # -- Subsidios en especie (proxy de empleo formal con beneficios)
+      prop_sub_alim       = mean(sub_especie_alim   == 1, na.rm = TRUE),
+      prop_sub_transp     = mean(sub_especie_transp == 1, na.rm = TRUE),
+ 
+      # -- Subempleo
+      prop_subempleo      = mean(quiere_mas_horas == 1, na.rm = TRUE),
+ 
+      # -- Segundo empleo
+      prop_2do_empleo     = mean(tiene_2do_empleo == 1, na.rm = TRUE),
+ 
+      # -- Ingresos no laborales (presencia en el hogar)
+      alguno_pension_jub  = as.integer(any(recibe_pension_jub == 1, na.rm = TRUE)),
+      alguno_remesas      = as.integer(any(recibe_remesas     == 1, na.rm = TRUE)),
+      alguno_subsidio     = as.integer(any(recibe_subsidio    == 1, na.rm = TRUE)),
+      alguno_transf_nac   = as.integer(any(recibe_transf_nac  == 1, na.rm = TRUE)),
+ 
+      # -- Horas trabajadas
+      horas_prom          = mean(horas_trabajadas, na.rm = TRUE),
+ 
+      .groups = "drop"
+    ) |>
+    mutate(across(where(is.numeric), ~ if_else(is.infinite(.), NA_real_, .)))
+}
+ 
+vars_per_train <- agregar_personas(train_per)
+vars_per_test  <- agregar_personas(test_per)
+ 
+message("  Variables agregadas desde personas: ", ncol(vars_per_train) - 1)
+ 
+ # -- 7. Merge ---------------------------------------------------------------
+message("\n== Merge hogar + personas ==")
+ 
+train_full <- left_join(train_hog, vars_per_train, by = "id")
+test_full  <- left_join(test_hog,  vars_per_test,  by = "id")
+ 
+sin_match_train <- sum(is.na(train_full$n_ocupados))
+sin_match_test  <- sum(is.na(test_full$n_ocupados))
+if (sin_match_train > 0) message("  Sin match en train: ", sin_match_train, " hogares")
+if (sin_match_test  > 0) message("  Sin match en test:  ", sin_match_test,  " hogares")
+ 
+message("  train_full: ", nrow(train_full), " x ", ncol(train_full))
+message("  test_full:  ", nrow(test_full),  " x ", ncol(test_full))
+
+# -- 8. Seleccion y alineacion de columnas ----------------------------------
+message("\n== Seleccion de columnas ==")
+
+# Excluir:
+#   - lineas de pobreza: definen el outcome (data leakage)
+#   - factores de expansion: ponderadores muestrales, no predictores
+#   - sexo: reemplazado por 'mujer' (0/1) generada en paso 4
+vars_excluir_ambos <- c(
+  "linea_pobreza", "linea_indigencia",
+  "factor_exp", "factor_exp_dpto",
+  "sexo"
+)
+ 
+vars_excluir_solo_train <- c(
+  "Ingtotug", "Ingtotugarr", "Ingpcug",   # agregados ingreso unidad de gasto
+  "Indigente", "Npobres", "Nindigentes"   # derivadas del outcome -> data leakage
+)
+ 
+train_model <- train_full |>
+  select(-any_of(vars_excluir_ambos), -any_of(vars_excluir_solo_train))
+ 
+test_model  <- test_full  |>
+  select(-any_of(vars_excluir_ambos), -any_of("pobre"))
+ 
+# Alinear predictores: solo columnas comunes a ambas bases.
+cols_train    <- setdiff(names(train_model), "pobre")
+solo_en_train <- setdiff(cols_train, names(test_model))
+solo_en_test  <- setdiff(names(test_model), cols_train)
+ 
+if (length(solo_en_train) > 0) {
+  message("  Aun en train pero no en test (se eliminan): ",
+          paste(solo_en_train, collapse = ", "))
+  train_model <- select(train_model, -any_of(solo_en_train))
+}
+if (length(solo_en_test) > 0) {
+  message("  En test pero no en train (se eliminan): ",
+          paste(solo_en_test, collapse = ", "))
+  test_model <- select(test_model, -any_of(solo_en_test))
+}
+ 
+cols_finales <- setdiff(names(train_model), "pobre")
+test_model   <- select(test_model, all_of(cols_finales))
+ 
+message("  Predictores finales: ", length(cols_finales))
+cat("\n-- Lista de predictores --\n")
+print(cols_finales)
+
+# -- 10. Diagnosticos -------------------------------------------------------
+message("\n== Diagnosticos ==")
+ 
+cat("\n-- Top 10 variables con mas NAs (train_model) --\n")
+train_model |>
+  summarise(across(everything(), ~ mean(is.na(.)))) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "pct_na") |>
+  filter(pct_na > 0) |>
+  arrange(desc(pct_na)) |>
+  slice_head(n = 10) |>
+  mutate(pct_na = scales::percent(pct_na, accuracy = 0.1)) |>
+  print()
+ 
+# -- 11. Guardado -----------------------------------------------------------
+message("\n== Guardando ==")
+ 
+saveRDS(train_model,           file.path(dir_processed, "train_final.rds"))
+saveRDS(test_model,            file.path(dir_processed, "test_final.rds"))
+#saveRDS(select(test_full, id), file.path(dir_processed, "test_ids.rds"))
+ 
+message("  train_final.rds : ", nrow(train_model), " x ", ncol(train_model))
+message("  test_final.rds  : ", nrow(test_model),  " x ", ncol(test_model))
+#message("  test_ids.rds    : ", nrow(test_full), " ids")
+message("\n== Listo. Siguiente: 02_eda.R ==")
+ 
+ 
+# -- Uso en scripts posteriores --------------------------------------------
+# train <- readRDS("data/processed/train_final.rds")
+# test  <- readRDS("data/processed/test_final.rds")
+# ids   <- readRDS("data/processed/test_ids.rds")

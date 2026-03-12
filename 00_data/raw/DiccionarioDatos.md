@@ -36,11 +36,11 @@
 | `P5000` | numérica | Número de cuartos o piezas que tiene la vivienda (sin contar cocina, baños ni garaje). | Entero ≥ 1 |
 | `P5010` | numérica | Número de cuartos o piezas usados para dormir. | Entero ≥ 1 |
 | `P5090` | categórica | Tenencia de la vivienda. | `1` = Propia pagada · `2` = Propia pagando · `3` = Arriendo/subarr. · `4` = Usufructo · `5` = Posesión sin título · `6` = Otra |
-| `P5100` | numérica | Valor mensual del arriendo pagado (si aplica). | Pesos colombianos (COP) |
+| `P5100` | numérica | Valor mensual de cuota de amortización. | Pesos colombianos (COP) |
 | `P5130` | numérica | Valor mensual del arriendo estimado de la vivienda (si fuera a arrendarse). | COP |
-| `P5140` | numérica | Valor mensual del servicio de alojamiento (hoteles, pensiones, etc.). | COP |
+| `P5140` | numérica | Valor mensual del arriendo | COP |
 | `Nper` | numérica | Número total de personas en el hogar. | Entero ≥ 1 |
-| `Npersug` | numérica | Número de personas en la unidad de gasto. | Entero ≥ 1 |
+| `Npersug` | numérica | Número de personas en la unidad de gasto | Entero ≥ 1 |
 | `Li` | numérica | Línea de indigencia (pobreza extrema) per cápita mensual. | COP |
 | `Lp` | numérica | Línea de pobreza per cápita mensual. | COP |
 | `Fex_c` | numérica | Factor de expansión del hogar a nivel nacional. | Ponderador muestral |
