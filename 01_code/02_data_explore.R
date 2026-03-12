@@ -1,4 +1,5 @@
 # -- Uso en scripts posteriores --------------------------------------------
-train <- readRDS("data/processed/train_final.rds")
-test  <- readRDS("data/processed/test_final.rds")
-ids   <- readRDS("data/processed/test_ids.rds")
+dir_processed <- "00_data/processed"
+
+train <- readRDS(file.path(dir_processed, "train_final.rds"))
+test  <- readRDS(file.path(dir_processed, "test_final.rds"))

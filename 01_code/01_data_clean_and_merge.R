@@ -415,6 +415,8 @@ if (sin_match_test  > 0) message("  Sin match en test:  ", sin_match_test,  " ho
 message("  train_full: ", nrow(train_full), " x ", ncol(train_full))
 message("  test_full:  ", nrow(test_full),  " x ", ncol(test_full))
 
+train_full <- train_full %>% rename(pobre = Pobre)
+
 # -- 8. Seleccion y alineacion de columnas ----------------------------------
 message("\n== Seleccion de columnas ==")
 
@@ -480,15 +482,18 @@ message("\n== Guardando ==")
  
 saveRDS(train_model,           file.path(dir_processed, "train_final.rds"))
 saveRDS(test_model,            file.path(dir_processed, "test_final.rds"))
-#saveRDS(select(test_full, id), file.path(dir_processed, "test_ids.rds"))
+
+
+# CSV no se suben al github quedan localmente
+write_csv(train_model, file.path(dir_processed, "train_final.csv"))
+write_csv(test_model,  file.path(dir_processed, "test_final.csv"))
+
  
 message("  train_final.rds : ", nrow(train_model), " x ", ncol(train_model))
 message("  test_final.rds  : ", nrow(test_model),  " x ", ncol(test_model))
-#message("  test_ids.rds    : ", nrow(test_full), " ids")
 message("\n== Listo. Siguiente: 02_eda.R ==")
  
  
 # -- Uso en scripts posteriores --------------------------------------------
-# train <- readRDS("data/processed/train_final.rds")
-# test  <- readRDS("data/processed/test_final.rds")
-# ids   <- readRDS("data/processed/test_ids.rds")
+# train <- readRDS("00_data/processed/train_final.rds")
+# test  <- readRDS("00_data/processed/test_final.rds")

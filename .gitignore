@@ -57,3 +57,5 @@ data/raw/*
 kaggle.json
 *.json
 
+# ── Modelos csv ──────────────────────────────────────
+00_data/processed/*.csv
