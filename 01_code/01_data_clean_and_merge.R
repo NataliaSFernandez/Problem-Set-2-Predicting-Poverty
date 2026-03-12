@@ -464,20 +464,7 @@ message("  Predictores finales: ", length(cols_finales))
 cat("\n-- Lista de predictores --\n")
 print(cols_finales)
 
-# -- 10. Diagnosticos -------------------------------------------------------
-message("\n== Diagnosticos ==")
- 
-cat("\n-- Top 10 variables con mas NAs (train_model) --\n")
-train_model |>
-  summarise(across(everything(), ~ mean(is.na(.)))) |>
-  pivot_longer(everything(), names_to = "variable", values_to = "pct_na") |>
-  filter(pct_na > 0) |>
-  arrange(desc(pct_na)) |>
-  slice_head(n = 10) |>
-  mutate(pct_na = scales::percent(pct_na, accuracy = 0.1)) |>
-  print()
- 
-# -- 11. Guardado -----------------------------------------------------------
+# -- 10. Guardado -----------------------------------------------------------
 message("\n== Guardando ==")
  
 saveRDS(train_model,           file.path(dir_processed, "train_final.rds"))
@@ -491,9 +478,7 @@ write_csv(test_model,  file.path(dir_processed, "test_final.csv"))
  
 message("  train_final.rds : ", nrow(train_model), " x ", ncol(train_model))
 message("  test_final.rds  : ", nrow(test_model),  " x ", ncol(test_model))
-message("\n== Listo. Siguiente: 02_eda.R ==")
  
- 
-# -- Uso en scripts posteriores --------------------------------------------
+# -- Uso en scripts  --------------------------------------------
 # train <- readRDS("00_data/processed/train_final.rds")
 # test  <- readRDS("00_data/processed/test_final.rds")
