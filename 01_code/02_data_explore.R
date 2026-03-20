@@ -14,8 +14,6 @@
 #   2. ¿Qué patrones en los datos confirman o desafían esas hipótesis?
 #   3. ¿Qué tan severo es el desbalance de clases y qué implica para el modelado?
 #
-# AUTOR: Daniel Solano
-# FECHA: 2026-03-14
 #==============================================================================
 
 # ==============================================================================
