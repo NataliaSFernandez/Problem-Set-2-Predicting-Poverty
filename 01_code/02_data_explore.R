@@ -29,13 +29,14 @@ pacman::p_load(
   tidyverse,   # manipulación de datos + ggplot2
   corrplot,    # visualización de correlaciones
   skimr,       # resumen rápido de dataframes
-  scales       # formateo de ejes en gráficos
+  scales,       # formateo de ejes en gráficos
+  fs           # manejo de archivos y directorios
 )
 
 # Cargamos los datos limpios que generó Natalia en el script 01
 dir_processed <- "00_data/processed"
 dir_figures   <- "02_outputs/figures"
-dir_create(dir_figures, recurse = TRUE)
+fs::dir_create(dir_figures, recurse = TRUE)
 train <- readRDS(file.path(dir_processed, "train_final.rds"))
 test  <- readRDS(file.path(dir_processed, "test_final.rds"))
 
@@ -224,7 +225,7 @@ ggplot(top_corr, aes(x = reorder(variable, corr_pobre), y = corr_pobre,
   geom_col(width = 0.7) +
   coord_flip() +
   scale_fill_manual(values = c("TRUE" = "#E84855", "FALSE" = "#2E86AB"),
-                    labels = c("Reduce pobreza", "Aumenta pobreza")) +
+                  labels = c("TRUE" = "Aumenta pobreza", "FALSE" = "Reduce pobreza"))+
   labs(
     title    = "Correlación de cada variable con la pobreza",
     subtitle = "Top 20 variables más asociadas (correlación de Pearson)",
@@ -449,13 +450,18 @@ cat("  07_subsidiado_vs_pobre.png\n")
 cat("  08_menores_vs_pobre.png\n")
 cat("  09_matriz_correlaciones.png\n")
 # Guardar todas las tablas en un archivo de texto
-sink(file.path(dir_figures, "resultados_eda.txt"))
-cat("=== RESUMEN DESCRIPTIVO GENERAL ===\n\n")
-print(skim_result)
-cat("\n\n=== VARIABLES CON MAS DE 10% NAs ===\n\n")
-print(vars_na)
-cat("\n\n=== MEDIAS POR GRUPO (POBRES vs NO POBRES) ===\n\n")
-print(tabla_medias, n = 30)
-cat("\n\n=== TOP 20 CORRELACIONES CON POBREZA ===\n\n")
-print(head(correlaciones, 20))
-sink()
+tryCatch({
+  sink(file.path(dir_figures, "resultados_eda.txt"))
+  cat("=== RESUMEN DESCRIPTIVO GENERAL ===\n\n")
+  print(skim_result)
+  cat("\n\n=== VARIABLES CON MAS DE 10% NAs ===\n\n")
+  print(vars_na)
+  cat("\n\n=== MEDIAS POR GRUPO (POBRES vs NO POBRES) ===\n\n")
+  print(tabla_medias, n = 30)
+  cat("\n\n=== TOP 20 CORRELACIONES CON POBREZA ===\n\n")
+  print(head(correlaciones, 20))
+  sink()
+}, error = function(e) {
+  if (sink.number() > 0) sink()
+  message("Error guardando resultados: ", e$message)
+})
