@@ -20,7 +20,7 @@
 #    5. Agregados personas --> hogar
 #    6. Merge
 #    8. Seleccion y alineacion de columnas (excluir variables que no estan en test, o que definen el outcome)
-#    9. Diagnosticos basicos (NA, prevalencia)
+#    9. Diagnosticos basicos (NA, prevalencia) (no incluido en este script, se hace en EDA)
 #    10. Guardado de datos limpios para EDA y modelado
 
 #
