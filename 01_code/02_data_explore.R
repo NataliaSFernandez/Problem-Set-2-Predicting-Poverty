@@ -34,12 +34,14 @@ pacman::p_load(
 
 # Cargamos los datos limpios que generó Natalia en el script 01
 dir_processed <- "00_data/processed"
+dir_figures   <- "02_outputs/figures"
+dir_create(dir_figures, recurse = TRUE)
 train <- readRDS(file.path(dir_processed, "train_final.rds"))
 test  <- readRDS(file.path(dir_processed, "test_final.rds"))
 
 # Convertimos 'pobre' a factor con etiquetas legibles para los gráficos
 # 0 = No pobre, 1 = Pobre
-train <- train %>%
+train <- train |>
   mutate(pobre_f = factor(pobre, levels = c(0, 1), labels = c("No pobre", "Pobre")))
 
 cat("Train:", nrow(train), "hogares |", ncol(train), "columnas\n")
@@ -87,7 +89,7 @@ ggplot(tabla_pobre, aes(x = pobre_f, y = n, fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("01_desbalance_clases.png", width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "01_desbalance_clases.png"), width = 7, height = 5, dpi = 150)
 
 
 # ==============================================================================
@@ -232,7 +234,7 @@ ggplot(top_corr, aes(x = reorder(variable, corr_pobre), y = corr_pobre,
   theme_minimal(base_size = 12) +
   theme(legend.position = "bottom")
 
-ggsave("02_correlaciones_pobre.png", width = 8, height = 7, dpi = 150)
+ggsave(file.path(dir_figures, "02_correlaciones_pobre.png"), width = 8, height = 7, dpi = 150)
 
 
 # ==============================================================================
@@ -262,7 +264,7 @@ ggplot(train, aes(x = factor(nivel_educ_jefe), fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "bottom")
 
-ggsave("03_educ_jefe_vs_pobre.png", width = 8, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "03_educ_jefe_vs_pobre.png"), width = 8, height = 5, dpi = 150)
 
 
 # --- 5.2 Ratio de dependencia ---
@@ -281,7 +283,7 @@ ggplot(train, aes(x = pobre_f, y = ratio_depend, fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("04_ratio_depend_vs_pobre.png", width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "04_ratio_depend_vs_pobre.png"), width = 7, height = 5, dpi = 150)
 
 
 # --- 5.3 Proporción de cotizantes a pensión ---
@@ -300,7 +302,7 @@ ggplot(train, aes(x = pobre_f, y = prop_cotiza_pension, fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("05_pension_vs_pobre.png", width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "05_pension_vs_pobre.png"), width = 7, height = 5, dpi = 150)
 
 
 # --- 5.4 Tasa de ocupación del hogar ---
@@ -319,7 +321,7 @@ ggplot(train, aes(x = pobre_f, y = tasa_ocupacion, fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("06_tasa_ocup_vs_pobre.png", width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "06_tasa_ocup_vs_pobre.png"), width = 7, height = 5, dpi = 150)
 
 
 # --- 5.5 Proporción con régimen subsidiado de salud ---
@@ -338,7 +340,7 @@ ggplot(train %>% filter(!is.na(prop_subsidiado)),
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("07_subsidiado_vs_pobre.png", width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "07_subsidiado_vs_pobre.png"), width = 7, height = 5, dpi = 150)
 
 
 # --- 5.6 Número de menores de 18 años ---
@@ -356,7 +358,7 @@ ggplot(train, aes(x = factor(n_menores_18), fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "bottom")
 
-ggsave("08_menores_vs_pobre.png", width = 8, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "08_menores_vs_pobre.png"), width = 8, height = 5, dpi = 150)
 
 
 # ==============================================================================
@@ -382,7 +384,7 @@ mat_corr <- train %>%
   select(all_of(vars_matriz)) %>%
   cor(use = "pairwise.complete.obs")
 
-png("09_matriz_correlaciones.png", width = 900, height = 800, res = 120)
+png(file.path(dir_figures, "09_matriz_correlaciones.png"), width = 900, height = 800, res = 120)
 corrplot(mat_corr,
          method  = "color",
          type    = "lower",
@@ -447,7 +449,7 @@ cat("  07_subsidiado_vs_pobre.png\n")
 cat("  08_menores_vs_pobre.png\n")
 cat("  09_matriz_correlaciones.png\n")
 # Guardar todas las tablas en un archivo de texto
-sink("02_outputs/figures/resultados_eda.txt")
+sink(file.path(dir_figures, "resultados_eda.txt"))
 cat("=== RESUMEN DESCRIPTIVO GENERAL ===\n\n")
 print(skim_result)
 cat("\n\n=== VARIABLES CON MAS DE 10% NAs ===\n\n")
