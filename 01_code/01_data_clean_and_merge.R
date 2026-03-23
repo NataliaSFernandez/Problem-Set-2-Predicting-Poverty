@@ -54,7 +54,7 @@ message("== Cargando datos ==")
 
 train_hog <- read_csv(file.path(dir_raw, "train_hogares.csv"),  show_col_types = FALSE)
 test_hog  <- read_csv(file.path(dir_raw, "test_hogares.csv"),   show_col_types = FALSE)
-train_per <- read_csv(unz(file.path(dir_raw, "train_personas.zip"),"train_personas/train_personas.csv"))
+train_per <- read_csv(unz(file.path(dir_raw, "train_personas.zip"),"train_personas/train_personas.csv"), show_col_types = FALSE)
 test_per  <- read_csv(file.path(dir_raw, "test_personas.csv"),  show_col_types = FALSE)
 
 message("  train_hogares:  ", nrow(train_hog), " filas | ", ncol(train_hog), " cols")
@@ -387,6 +387,8 @@ agregar_personas <- function(df) {
       alguno_remesas      = as.integer(any(recibe_remesas     == 1, na.rm = TRUE)),
       alguno_subsidio     = as.integer(any(recibe_subsidio    == 1, na.rm = TRUE)),
       alguno_transf_nac   = as.integer(any(recibe_transf_nac  == 1, na.rm = TRUE)),
+      alguno_intereses  = as.integer(any(recibe_intereses == 1, na.rm = TRUE)),
+      alguno_cesantias  = as.integer(any(recibe_cesantias == 1, na.rm = TRUE)),
  
       # -- Horas trabajadas
       horas_prom          = mean(horas_trabajadas, na.rm = TRUE),
