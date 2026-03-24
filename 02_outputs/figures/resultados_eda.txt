@@ -4,108 +4,108 @@
                            Values    
 Name                       Piped data
 Number of rows             164960    
-Number of columns          40        
+Number of columns          43        
 _______________________              
 Column type frequency:               
-  numeric                  40        
+  numeric                  43        
 ________________________             
 Group variables            None      
 
 ── Variable type: numeric ──────────────────────────────────────────────────────
    skim_variable       n_missing complete_rate         mean           sd    p0
- 1 zona                        0        1           1.09          0.292   1   
- 2 num_cuartos                 0        1           3.39          1.24    1   
- 3 num_cuartos_dorm            0        1           1.99          0.898   1   
- 4 tipo_tenencia               0        1           2.46          1.26    1   
- 5 arriendo_pagado        159334        0.0341 919943.      6115976.     98   
- 6 arriendo_estimado       64453        0.609  499841.      4163131.     98   
- 7 valor_alojamiento      100507        0.391  437912.      1447543.     20   
- 8 num_personas                0        1           3.29          1.77    1   
- 9 num_personas_ug             0        1           3.28          1.77    1   
-10 n_menores_18                0        1           0.919         1.12    0   
-11 n_adultos_may               0        1           0.322         0.607   0   
-12 edad_prom                   0        1          37.4          16.9     5.67
-13 edad_jefe                   0        1          49.6          16.4    11   
-14 prop_mujeres                0        1           0.526         0.277   0   
-15 ratio_depend                0        1           0.587         0.667   0   
-16 nivel_educ_max              0        1           5.12          1.11    1   
-17 nivel_educ_jefe             0        1           4.37          1.40    1   
-18 nivel_educ_prom             0        1           4.31          1.08    1   
-19 n_ocupados                  0        1           1.50          1.03    0   
-20 n_desempleados              0        1           0.182         0.446   0   
-21 n_inactivos                 0        1           1.03          1.03    0   
-22 tasa_ocupacion              0        1           0.582         0.339   0   
-23 tasa_desempleo              0        1           0.0890        0.228   0   
-24 prop_asalariado             0        1           0.210         0.281   0   
-25 prop_cta_propia         22223        0.865       0.466         0.435   0   
-26 prop_informal               0        1           0.253         0.305   0   
-27 prop_afil_salud             0        1           0.942         0.186   0   
-28 prop_subsidiado          5452        0.967       0.457         0.451   0   
-29 prop_cotiza_pension         0        1           0.195         0.278   0   
-30 prop_prima_serv             0        1           0.910         0.198   0   
-31 prop_sub_alim               0        1           0.00615       0.0560  0   
-32 prop_sub_transp             0        1           0.105         0.211   0   
-33 prop_subempleo              0        1           0.0443        0.147   0   
-34 prop_2do_empleo             0        1           0.0259        0.114   0   
-35 alguno_pension_jub          0        1           0.987         0.113   0   
-36 alguno_remesas              0        1           0.0195        0.138   0   
-37 alguno_subsidio             0        1           0.151         0.358   0   
-38 alguno_transf_nac           0        1           0.225         0.418   0   
-39 horas_prom              22223        0.865      45.2          13.1     1   
-40 pobre                       0        1           0.200         0.400   0   
-          p25        p50        p75      p100 hist 
- 1      1          1          1             2 ▇▁▁▁▁
- 2      3          3          4            98 ▇▁▁▁▁
- 3      1          2          3            15 ▇▁▁▁▁
- 4      1          3          3             6 ▇▇▃▁▁
- 5 300000     500000     893875     280000000 ▇▁▁▁▁
- 6 200000     350000     500000     600000000 ▇▁▁▁▁
- 7 250000     380000     500000     300000000 ▇▁▁▁▁
- 8      2          3          4            28 ▇▁▁▁▁
- 9      2          3          4            28 ▇▁▁▁▁
-10      0          1          2            15 ▇▁▁▁▁
-11      0          0          1             6 ▇▁▁▁▁
-12     24         33.5       48.2         102 ▅▇▃▂▁
-13     37         49         61           108 ▃▇▇▂▁
-14      0.333      0.5        0.667         1 ▃▅▇▅▃
-15      0          0.5        1             7 ▇▁▁▁▁
-16      5          5          6             9 ▁▃▅▇▁
-17      3          5          6             9 ▁▇▅▅▁
-18      3.6        4.33       5             9 ▁▇▇▂▁
-19      1          1          2            14 ▇▁▁▁▁
-20      0          0          0             6 ▇▁▁▁▁
-21      0          1          2            11 ▇▁▁▁▁
-22      0.333      0.5        1             1 ▃▅▆▃▇
-23      0          0          0             1 ▇▁▁▁▁
-24      0          0          0.333         1 ▇▃▂▁▁
-25      0          0.5        1             1 ▇▁▃▁▇
-26      0          0.2        0.429         1 ▇▃▂▁▁
-27      1          1          1             1 ▁▁▁▁▇
-28      0          0.333      1             1 ▇▁▁▁▆
-29      0          0          0.333         1 ▇▂▁▁▁
-30      1          1          1             1 ▁▁▁▁▇
-31      0          0          0             1 ▇▁▁▁▁
-32      0          0          0.167         1 ▇▁▁▁▁
-33      0          0          0             1 ▇▁▁▁▁
-34      0          0          0             1 ▇▁▁▁▁
-35      1          1          1             1 ▁▁▁▁▇
-36      0          0          0             1 ▇▁▁▁▁
-37      0          0          0             1 ▇▁▁▁▂
-38      0          0          0             1 ▇▁▁▁▂
-39     40         48         50           130 ▁▇▂▁▁
-40      0          0          0             1 ▇▁▁▁▂
+ 1 zona                        0             1      1.09          0.292   1   
+ 2 num_cuartos                 0             1      3.39          1.24    1   
+ 3 num_cuartos_dorm            0             1      1.99          0.898   1   
+ 4 tipo_tenencia               0             1      2.46          1.26    1   
+ 5 arriendo_pagado             0             1  31375.      1141653.      0   
+ 6 arriendo_estimado           0             1 304544.      3258725.      0   
+ 7 valor_alojamiento           0             1 171100.       929704.      0   
+ 8 num_personas                0             1      3.29          1.77    1   
+ 9 num_personas_ug             0             1      3.28          1.77    1   
+10 n_menores_18                0             1      0.919         1.12    0   
+11 n_adultos_may               0             1      0.322         0.607   0   
+12 edad_prom                   0             1     37.4          16.9     5.67
+13 edad_jefe                   0             1     49.6          16.4    11   
+14 prop_mujeres                0             1      0.526         0.277   0   
+15 ratio_depend                0             1      0.587         0.667   0   
+16 nivel_educ_max              0             1      5.12          1.11    1   
+17 nivel_educ_jefe             0             1      4.37          1.40    1   
+18 nivel_educ_prom             0             1      4.31          1.08    1   
+19 n_ocupados                  0             1      1.50          1.03    0   
+20 n_desempleados              0             1      0.182         0.446   0   
+21 n_inactivos                 0             1      1.03          1.03    0   
+22 tasa_ocupacion              0             1      0.582         0.339   0   
+23 tasa_desempleo              0             1      0.0890        0.228   0   
+24 prop_asalariado             0             1      0.210         0.281   0   
+25 prop_cta_propia             0             1      0.232         0.291   0   
+26 prop_informal               0             1      0.253         0.305   0   
+27 prop_afil_salud             0             1      0.942         0.186   0   
+28 prop_subsidiado             0             1      0.360         0.392   0   
+29 prop_cotiza_pension         0             1      0.195         0.278   0   
+30 prop_pensionado             0             1      0.0114        0.0805  0   
+31 prop_prima_serv             0             1      0.910         0.198   0   
+32 prop_sub_alim               0             1      0.00615       0.0560  0   
+33 prop_sub_transp             0             1      0.105         0.211   0   
+34 prop_subempleo              0             1      0.0443        0.147   0   
+35 prop_2do_empleo             0             1      0.0259        0.114   0   
+36 alguno_pension_jub          0             1      0.987         0.113   0   
+37 alguno_remesas              0             1      0.0195        0.138   0   
+38 alguno_subsidio             0             1      0.151         0.358   0   
+39 alguno_transf_nac           0             1      0.225         0.418   0   
+40 alguno_intereses            0             1      0.00912       0.0951  0   
+41 alguno_cesantias            0             1      0.0771        0.267   0   
+42 horas_prom                  0             1     22.4          16.2     0   
+43 pobre                       0             1      0.200         0.400   0   
+      p25        p50        p75      p100 hist 
+ 1  1          1          1             2 ▇▁▁▁▁
+ 2  3          3          4            98 ▇▁▁▁▁
+ 3  1          2          3            15 ▇▁▁▁▁
+ 4  1          3          3             6 ▇▇▃▁▁
+ 5  0          0          0     280000000 ▇▁▁▁▁
+ 6  0     100000     400000     600000000 ▇▁▁▁▁
+ 7  0          0     300000     300000000 ▇▁▁▁▁
+ 8  2          3          4            28 ▇▁▁▁▁
+ 9  2          3          4            28 ▇▁▁▁▁
+10  0          1          2            15 ▇▁▁▁▁
+11  0          0          1             6 ▇▁▁▁▁
+12 24         33.5       48.2         102 ▅▇▃▂▁
+13 37         49         61           108 ▃▇▇▂▁
+14  0.333      0.5        0.667         1 ▃▅▇▅▃
+15  0          0.5        1             7 ▇▁▁▁▁
+16  5          5          6             9 ▁▃▅▇▁
+17  3          5          6             9 ▁▇▅▅▁
+18  3.6        4.33       5             9 ▁▇▇▂▁
+19  1          1          2            14 ▇▁▁▁▁
+20  0          0          0             6 ▇▁▁▁▁
+21  0          1          2            11 ▇▁▁▁▁
+22  0.333      0.5        1             1 ▃▅▆▃▇
+23  0          0          0             1 ▇▁▁▁▁
+24  0          0          0.333         1 ▇▃▂▁▁
+25  0          0.143      0.333         1 ▇▃▂▁▁
+26  0          0.2        0.429         1 ▇▃▂▁▁
+27  1          1          1             1 ▁▁▁▁▇
+28  0          0.25       0.667         1 ▇▂▂▂▃
+29  0          0          0.333         1 ▇▂▁▁▁
+30  0          0          0             1 ▇▁▁▁▁
+31  1          1          1             1 ▁▁▁▁▇
+32  0          0          0             1 ▇▁▁▁▁
+33  0          0          0.167         1 ▇▁▁▁▁
+34  0          0          0             1 ▇▁▁▁▁
+35  0          0          0             1 ▇▁▁▁▁
+36  1          1          1             1 ▁▁▁▁▇
+37  0          0          0             1 ▇▁▁▁▁
+38  0          0          0             1 ▇▁▁▁▂
+39  0          0          0             1 ▇▁▁▁▂
+40  0          0          0             1 ▇▁▁▁▁
+41  0          0          0             1 ▇▁▁▁▁
+42 12         20         31.3         130 ▇▃▁▁▁
+43  0          0          0             1 ▇▁▁▁▂
 
 
 === VARIABLES CON MAS DE 10% NAs ===
 
-# A tibble: 5 × 2
-  variable          pct_na
-  <chr>              <dbl>
-1 arriendo_pagado     96.6
-2 valor_alojamiento   60.9
-3 arriendo_estimado   39.1
-4 prop_cta_propia     13.5
-5 horas_prom          13.5
+# A tibble: 0 × 2
+# ℹ 2 variables: variable <chr>, pct_na <dbl>
 
 
 === MEDIAS POR GRUPO (POBRES vs NO POBRES) ===
@@ -113,18 +113,18 @@ Group variables            None
 # A tibble: 24 × 5
    variable            `No pobre`   Pobre diferencia ratio
    <chr>                    <dbl>   <dbl>      <dbl> <dbl>
- 1 edad_jefe              50.3    46.8      -3.55     0.93
- 2 horas_prom             45.8    42.8      -3.02     0.93
+ 1 horas_prom             24.8    12.7     -12.1      0.51
+ 2 edad_jefe              50.3    46.8      -3.55     0.93
  3 num_personas            3.08    4.13      1.05     1.34
  4 n_menores_18            0.715   1.73      1.02     2.42
  5 nivel_educ_prom         4.47    3.69     -0.778    0.83
  6 nivel_educ_jefe         4.52    3.77     -0.744    0.84
  7 nivel_educ_max          5.22    4.71     -0.511    0.9 
- 8 prop_subsidiado         0.366   0.828     0.463    2.26
- 9 tipo_tenencia           2.37    2.82      0.452    1.19
-10 num_cuartos             3.48    3.03     -0.449    0.87
-11 ratio_depend            0.515   0.875     0.361    1.7 
-12 n_ocupados              1.57    1.26     -0.309    0.8 
+ 8 tipo_tenencia           2.37    2.82      0.452    1.19
+ 9 num_cuartos             3.48    3.03     -0.449    0.87
+10 ratio_depend            0.515   0.875     0.361    1.7 
+11 n_ocupados              1.57    1.26     -0.309    0.8 
+12 prop_subsidiado         0.306   0.577     0.271    1.89
 13 prop_cotiza_pension     0.237   0.0276   -0.209    0.12
 14 alguno_subsidio         0.109   0.318     0.209    2.91
 15 prop_asalariado         0.250   0.0499   -0.200    0.2 
@@ -142,12 +142,12 @@ Group variables            None
 === TOP 20 CORRELACIONES CON POBREZA ===
 
               variable corr_pobre
-1      prop_subsidiado  0.4070713
-2         n_menores_18  0.3633909
-3  prop_cotiza_pension -0.3003374
+1         n_menores_18  0.3633909
+2  prop_cotiza_pension -0.3003374
+3           horas_prom -0.2985500
 4      nivel_educ_prom -0.2892489
 5      prop_asalariado -0.2847367
-6      prop_cta_propia  0.2455448
+6      prop_subsidiado  0.2768788
 7      num_personas_ug  0.2404370
 8         num_personas  0.2372489
 9      alguno_subsidio  0.2331854
