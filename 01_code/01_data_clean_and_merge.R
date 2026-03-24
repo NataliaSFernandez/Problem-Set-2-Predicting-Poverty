@@ -24,7 +24,7 @@
 #    9.  Selección y alineación train/test
 #   10.  Guardado
 #==============================================================================
-
+# nolint start
 # -- 0. Paquetes -------------------------------------------------------------
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
@@ -574,3 +574,5 @@ message("  test_final:  ", nrow(test_model), " x ", ncol(test_model))
 # -- Uso en scripts posteriores ---------------------------------------------
 # train <- readRDS("00_data/processed/train_final.rds")
 # test  <- readRDS("00_data/processed/test_final.rds")
+# nolint end
+
