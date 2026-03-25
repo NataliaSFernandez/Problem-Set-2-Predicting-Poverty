@@ -41,11 +41,9 @@ message("  test:  ", nrow(test),  " x ", ncol(test))
 # Variables no capturadas en el script 01 pero relevantes según la literatura:
 #   - Estrato socioeconómico (Estrato1): proxy directo de nivel de vida en Colombia
 #   - Sexo del jefe de hogar (mujer_jefa): factor de vulnerabilidad estructural
-#   - Posiciones ocupacionales adicionales: patrón, jornalero, doméstico,
-#     familiar sin remuneración
+#   - Posiciones ocupacionales: patrón, doméstico, jornalero, familiar sin remuneración
 #   - Tamaño de empresa: proxy de formalidad del empleo
 #   - Antigüedad laboral: estabilidad del empleo
-#   - Subempleo por ingresos y por competencias (adicionales al de horas)
 #   - Ingreso agropecuario y de arrendamientos
 
 message("\n== Cargando datos crudos de personas ==")
@@ -91,10 +89,6 @@ agregar_nuevas_vars_per <- function(df) {
 
       # Antigüedad en el empleo actual (meses)
       antiguedad    = as.numeric(P6426),
-
-      # Subempleo por competencias (P7110) y por ingresos (P7120)
-      sub_comp      = recodificar_si_no(P7110),
-      sub_ing       = recodificar_si_no(P7120),
 
       # Ingreso agropecuario (P7472) e ingreso por arriendo (P7500s1)
       recibe_agropec   = recodificar_si_no(P7472),
@@ -161,16 +155,7 @@ agregar_nuevas_vars_per <- function(df) {
       antiguedad_alta = as.integer(any(antiguedad > 24, na.rm = TRUE)),  # >2 años
 
       # -----------------------------------------------------------------------
-      # F. Subempleo por ingresos y competencias
-      # Referencia: ILO (2007) "Decent Work Indicators"
-      # El subempleo por ingresos identifica "trabajadores pobres": personas
-      # que trabajan tiempo completo pero no alcanzan ingresos suficientes.
-      # -----------------------------------------------------------------------
-      prop_sub_ingresos     = mean(sub_ing  == 1, na.rm = TRUE),
-      prop_sub_competencias = mean(sub_comp == 1, na.rm = TRUE),
-
-      # -----------------------------------------------------------------------
-      # G. Diversificación de ingresos: agropecuario y de activos
+      # F. Diversificación de ingresos: agropecuario y de activos
       # Referencia: Ellis (2000) "Rural Livelihoods and Diversity"
       # El ingreso agropecuario es típico de hogares rurales pobres.
       # El ingreso por arrendamientos refleja posesión de activos.
@@ -223,9 +208,6 @@ construir_nuevas_variables <- function(df) {
 
       # Personas por cuarto para dormir (hacinamiento nocturno — más directo)
       hacinamiento_dorm    = num_personas / pmax(num_cuartos_dorm, 1),
-
-      # Hacinamiento crítico: >3 personas por cuarto (umbral IPM Colombia)
-      hacinamiento_critico = as.integer(num_personas / pmax(num_cuartos, 1) > 3),
 
       # Cuartos per cápita (proxy positivo de espacio y calidad de vivienda)
       cuartos_pc           = num_cuartos / pmax(num_personas, 1),
@@ -280,9 +262,6 @@ construir_nuevas_variables <- function(df) {
       # Término cuadrático de educación promedio del hogar
       educ_prom_sq         = nivel_educ_prom^2,
 
-      # Privación educativa del jefe: máximo básica primaria (umbral IPM)
-      educ_insuf_jefe      = as.integer(nivel_educ_jefe <= 3),
-
       # Jefe con educación media o superior (bachillerato completo o más)
       educ_media_o_mas     = as.integer(nivel_educ_jefe >= 5),
 
@@ -316,12 +295,6 @@ construir_nuevas_variables <- function(df) {
 
       # Tasa de empleo sobre total del hogar (no solo sobre PET)
       tasa_empleo_total    = n_ocupados / pmax(num_personas, 1),
-
-      # Subempleo total: promedio de tres dimensiones (horas, ingresos, competencias)
-      subempleo_total      = rowMeans(
-        cbind(prop_subempleo, prop_sub_ingresos, prop_sub_competencias),
-        na.rm = TRUE
-      ),
 
       # ========================================================================
       # BLOQUE 5: DIVERSIFICACIÓN Y RESILIENCIA DE INGRESOS
@@ -536,17 +509,17 @@ message("\n== Diagnóstico de nuevas variables ==")
 
 vars_nuevas <- c(
   # Bloque 1: Vivienda
-  "hacinamiento", "hacinamiento_dorm", "hacinamiento_critico",
+  "hacinamiento", "hacinamiento_dorm",
   "cuartos_pc", "tenencia_insegura", "vivienda_propia_pag",
   # Bloque 2: Demografía
   "prop_menores", "prop_adultos_may_p", "menores_por_ocupado",
   "sin_ocupados", "un_solo_ocupado", "doble_ingreso", "hogar_monoparental",
   # Bloque 3: Capital humano
-  "educ_jefe_sq", "educ_prom_sq", "educ_insuf_jefe",
+  "educ_jefe_sq", "educ_prom_sq",
   "educ_media_o_mas", "educ_superior_jefe", "brecha_educ",
   # Bloque 4: Calidad empleo
   "indice_formalidad", "formal_estricto", "vulnerabilidad_lab",
-  "tasa_empleo_total", "subempleo_total",
+  "tasa_empleo_total",
   # Bloque 5: Diversificación ingresos
   "n_fuentes_no_lab", "tiene_ingreso_no_lab", "solo_subsidio", "ingresos_activos",
   # Bloque 6: Protección social
@@ -569,7 +542,6 @@ vars_nuevas <- c(
   "prop_patron", "prop_domestico", "prop_fam_sin_rem", "prop_jornalero",
   "prop_microempresa", "prop_gran_empresa",
   "antiguedad_prom", "antiguedad_alta",
-  "prop_sub_ingresos", "prop_sub_competencias",
   "alguno_agropec", "alguno_arriendos"
 )
 

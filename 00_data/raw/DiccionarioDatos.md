@@ -333,7 +333,6 @@ La gran mayoría de preguntas binarias en la encuesta usan la convención:
 |----------|-------------|----------------------|-----------|
 | `hacinamiento` | `num_personas / num_cuartos` | El espacio disponible por persona es un proxy directo de privación material. Hogares hacinados enfrentan peores condiciones sanitarias, menor productividad del trabajo en casa y menor calidad de vida. | Ferreira & Ravallion (2008) |
 | `hacinamiento_dorm` | `num_personas / num_cuartos_dorm` | Restringe el hacinamiento al espacio para dormir, más directamente vinculado al descanso, la salud y el desarrollo infantil. | DANE IPM Colombia (2022) |
-| `hacinamiento_critico` | `1` si `hacinamiento > 3` | Umbral oficial del IPM Colombia: más de 3 personas por cuarto constituye privación en la dimensión de vivienda. Variable binaria que activa la penalización discreta por hacinamiento extremo. | DANE IPM Colombia (2022) |
 | `cuartos_pc` | `num_cuartos / num_personas` | Versión inversa del hacinamiento; facilita la interpretación positiva del espacio como activo del hogar. | Ferreira & Ravallion (2008) |
 | `tenencia_insegura` | `1` si `tipo_tenencia ∈ {3,4,5,6}` | La inseguridad en la tenencia (arriendo, usufructo, posesión sin título) impide acumular patrimonio, limita el acceso a crédito y expone al hogar a desplazamiento forzado. | Payne (2002) |
 | `vivienda_propia_pag` | `1` si `tipo_tenencia == 1` | La propiedad pagada es el mayor activo acumulable para hogares de ingresos bajos; elimina el gasto en arriendo y provee garantía para crédito. | Attanasio & Székely (2001) |
@@ -356,7 +355,6 @@ La gran mayoría de preguntas binarias en la encuesta usan la convención:
 |----------|-------------|----------------------|-----------|
 | `educ_jefe_sq` | `nivel_educ_jefe²` | Los retornos a la educación son convexos: cada nivel adicional tiene mayor impacto salarial en los tramos altos. El término cuadrático captura este efecto creciente. | Mincer (1974) |
 | `educ_prom_sq` | `nivel_educ_prom²` | Mismo argumento aplicado a la educación promedio del hogar; captura el efecto no lineal del capital humano colectivo. | Card (1999) |
-| `educ_insuf_jefe` | `1` si `nivel_educ_jefe ≤ 3` | Umbral de privación educativa del IPM Colombia: jefe con máximo básica primaria. Por debajo de este nivel el acceso a empleo formal es prácticamente nulo. | DANE IPM Colombia (2022) |
 | `educ_media_o_mas` | `1` si `nivel_educ_jefe ≥ 5` | El bachillerato es la puerta de entrada al mercado laboral formal en Colombia. Activa el "sheepskin effect" de diploma más relevante para hogares de ingresos medios. | Hungerford & Solon (1987) |
 | `educ_superior_jefe` | `1` si `nivel_educ_jefe ≥ 6` | La educación técnica o universitaria multiplica los retornos salariales y reduce drásticamente la probabilidad de informalidad. | Card (1999) |
 | `brecha_educ` | `nivel_educ_max − nivel_educ_jefe` | Un valor positivo indica que algún miembro superó educativamente al jefe: señal de movilidad intergeneracional ascendente dentro del hogar. | Attanasio & Székely (2001) |
@@ -369,7 +367,6 @@ La gran mayoría de preguntas binarias en la encuesta usan la convención:
 | `formal_estricto` | `prop_asalariado × prop_cotiza_pension` | Exige que la formalidad sea simultánea en contrato y seguridad social; filtra trabajadores asalariados sin pensión (informalidad parcial). | Levy (2008) |
 | `vulnerabilidad_lab` | `prop_domestico + prop_fam_sin_rem + prop_jornalero` | Suma de las tres posiciones ocupacionales más precarias: sin contrato, sin prestaciones y con los salarios más bajos del mercado. | ILO (2018) |
 | `tasa_empleo_total` | `n_ocupados / num_personas` | Complementa la tasa de ocupación sobre PET con la proporción de empleados sobre el total, capturando el esfuerzo laboral relativo al tamaño del hogar. | Fields (2011) |
-| `subempleo_total` | Promedio de subempleo por horas, ingresos y competencias | El subempleo mide el "trabajo decente" más allá del empleo: trabajadores pobres que laboran tiempo completo pero con ingresos o condiciones insuficientes. | ILO (2007) |
 
 ### 6.5 Diversificación y resiliencia de ingresos
 
@@ -453,8 +450,6 @@ La gran mayoría de preguntas binarias en la encuesta usan la convención:
 | `prop_gran_empresa` | Proporción que trabaja en empresas de 20+ personas | Las empresas grandes tienen mayor probabilidad de cumplir la normativa laboral; su presencia en el hogar se asocia con empleo formal y salarios más altos. | Levy (2008) |
 | `antiguedad_prom` | Promedio de meses en el empleo actual | La antigüedad laboral refleja estabilidad del empleo y acumulación de capital específico; empleos más antiguos tienen mayor protección contra el despido. | Topel (1991) |
 | `antiguedad_alta` | `1` si alguien lleva más de 24 meses en su empleo | Umbral de dos años: indica que al menos un miembro tiene empleo estable consolidado, reduciendo el riesgo de caída al desempleo. | Topel (1991) |
-| `prop_sub_ingresos` | Proporción de subempleados por ingresos (P7120) | Identifica "trabajadores pobres": empleados a tiempo completo cuyos ingresos son insuficientes para cubrir necesidades básicas, aunque están formalmente ocupados. | ILO (2007) |
-| `prop_sub_competencias` | Proporción de subempleados por competencias (P7110) | Mide el desaprovechamiento de capital humano: trabajadores con mayor cualificación que la requerida por su puesto, señal de mercado laboral segmentado o deprimido. | ILO (2007) |
 | `alguno_agropec` | `1` si alguien recibe ingreso agropecuario | El ingreso agropecuario es típico de hogares rurales; puede ser tanto subsistencia (pobreza) como diversificación productiva (resiliencia), según el contexto. | Ellis (2000) |
 | `alguno_arriendos` | `1` si alguien recibe ingresos por arrendamiento | Los ingresos por arriendo reflejan posesión de activos inmobiliarios: característica casi exclusiva de hogares de ingresos medios y altos. | Attanasio & Székely (2001) |
 
