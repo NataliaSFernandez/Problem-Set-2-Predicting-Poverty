@@ -376,7 +376,6 @@ recodificar_personas <- function(df) {
     # Otras fuentes
     recibe_agropec      = recodificar_si_no(recibe_agropec),
     recibe_arr_pension  = recodificar_si_no(recibe_arr_pension),
-    recibe_arriendos    = recodificar_si_no(recibe_arriendos),
 
     # Ingresos no laborales (ya con 0 por imputacion estructural)
     recibe_pension_jub  = recodificar_si_no(recibe_pension_jub),
@@ -392,7 +391,9 @@ recodificar_personas <- function(df) {
     recibe_otros_ing    = recodificar_si_no(recibe_otros_ing)
 
     # Pet, Oc, Des, Ina: ya son 1/0, no se tocan
-  )
+  ) |>
+  # recibe_arriendos puede no existir en test_per (P7500s1 ausente)
+  mutate(across(any_of("recibe_arriendos"), recodificar_si_no))
 }
 
 train_per <- recodificar_personas(train_per)
@@ -419,6 +420,9 @@ test_per  <- limpiar_tipos(test_per)
 message("\n== Agregando personas al nivel hogar ==")
 
 agregar_personas <- function(df) {
+  # Columnas presentes en train_per pero ausentes en test_per
+  if (!"estrato"          %in% names(df)) df <- mutate(df, estrato          = NA_real_)
+  if (!"recibe_arriendos" %in% names(df)) df <- mutate(df, recibe_arriendos = NA_real_)
   df |>
     group_by(id) |>
     summarise(
@@ -480,6 +484,7 @@ agregar_personas <- function(df) {
       alguno_transf_nac   = as.integer(any(recibe_transf_nac  == 1, na.rm = TRUE)),
       alguno_intereses    = as.integer(any(recibe_intereses   == 1, na.rm = TRUE)),
       alguno_cesantias    = as.integer(any(recibe_cesantias   == 1, na.rm = TRUE)),
+      alguno_agropec      = as.integer(any(recibe_agropec    == 1, na.rm = TRUE)),
 
       # -- Horas trabajadas
       horas_prom          = mean(horas_trabajadas, na.rm = TRUE),
