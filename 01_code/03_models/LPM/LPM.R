@@ -259,7 +259,11 @@ VARS_EXCLUIR_A <- c(
   "eje_cafetero",
   # n_privaciones es la suma de los 5 indicadores dep_* de privación del IPM.
   # Al eliminarla, cada dimensión de privación tiene su propio coeficiente.
-  "n_privaciones"
+  "n_privaciones",
+  # estrato_hog, estrato_bajo y estrato_x_zona son NA en el 100% de las filas
+  # de test (estrato no está disponible en test_personas.csv). Excluirlas evita
+  # que predict() devuelva NA para todo el test.
+  "estrato_hog", "estrato_bajo", "estrato_x_zona"
 )
 
 # ---------- OPCIÓN B: conservar índices compuestos, eliminar componentes ------
@@ -335,7 +339,11 @@ VARS_EXCLUIR_B <- c(
   "dep_vivienda",
   "dep_empleo_formal",
   "dep_proteccion",
-  "dep_dependencia"
+  "dep_dependencia",
+  # estrato_hog, estrato_bajo y estrato_x_zona son NA en el 100% de las filas
+  # de test (estrato no está disponible en test_personas.csv). Excluirlas evita
+  # que predict() devuelva NA para todo el test.
+  "estrato_hog", "estrato_bajo", "estrato_x_zona"
 )
 
 
@@ -926,7 +934,7 @@ run_lpm <- function(model_id, notas, vars_excluir) {
 
   nueva_fila <- tibble(
     model_id           = model_id,
-    fecha              = as.character(Sys.Date()),
+    fecha              = Sys.Date(),
     autor              = AUTOR,
     algoritmo          = "LPM",
     n_features         = ncol(X_train),
