@@ -913,7 +913,11 @@ message("\n== Selección de columnas ==")
 vars_excluir_ambos <- c(
   "linea_pobreza", "linea_indigencia",   # data leakage: definen el outcome
   "factor_exp", "factor_exp_dpto",       # ponderadores muestrales
-  "sexo"                                 # reemplazada por 'mujer' (0/1)
+  "sexo",                                # reemplazada por 'mujer' (0/1)
+  # estrato_hog, estrato_bajo y estrato_x_zona son NA en el 100% de las filas
+  # de test porque estrato no está disponible en test_personas.csv.
+  # Se excluyen de ambos datasets para que los modelos no las usen.
+  "estrato_hog", "estrato_bajo", "estrato_x_zona"
 )
 
 vars_excluir_solo_train <- c(
