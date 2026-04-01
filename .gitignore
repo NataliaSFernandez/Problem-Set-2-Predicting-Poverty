@@ -59,3 +59,6 @@ kaggle.json
 
 # ── Modelos csv ──────────────────────────────────────
 00_data/processed/*.csv
+
+#--Outputs----------
+02_outputs/*.rds
