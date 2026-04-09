@@ -1,3 +1,4 @@
+# nolint start
 #==============================================================================
 # PROBLEM SET 2: PREDICTING POVERTY
 # Script: 03_modelos/naive_bayes.R
@@ -50,7 +51,6 @@
 #   02_outputs/model_registry.csv  
 #
 #==============================================================================
-# nolint start
 # -- 0. Paquetes -------------------------------------------------------------
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
@@ -480,3 +480,4 @@ if (diferencia < 0.005) {
       comparacion |> slice_min(n_features, n=1) |> pull(model_id), "\n")
 }
  
+# nolint end
