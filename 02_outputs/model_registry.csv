@@ -1,3 +1,4 @@
-model_id,fecha,autor,algoritmo,n_features,imbalance_strategy,cv_folds,cv_F1,cv_Precision,cv_Recall,auc_roc,kaggle_public_F1,threshold,notas
-EN_001A,2026-04-10,Dani,ElasticNet,39,none,5,0.667,0.6212,0.72,0.9074,NA,0.33999999999999997,"Sin indices compuestos -- misma especificacion que LPM_002A. glmnet binomial, center+scale."
-EN_001B,2026-04-10,Dani,ElasticNet,28,none,5,0.6551,0.5949,0.7289,0.9001,NA,0.31,"Con indices compuestos -- misma especificacion que LPM_002B. glmnet binomial, center+scale."
+model_id,fecha,autor,algoritmo,n_features,imbalance_strategy,cv_folds,cv_F1,cv_Precision,cv_Recall,auc_roc,kaggle_public_F1,threshold,notas,cp,maxdepth,train_F1,train_Precision,train_Recall
+NB_001B,2026-04-09,Natalia,NaiveBayes,82,none,5,0.5681,0.4146,0.902,0.875,NA,0.95,Con indices compuestos — misma especificacion que LPM_002B. usekernel=TRUE,NA,NA,NA,NA,NA
+EN_001A,2026-04-10,Dani,ElasticNet,39,none,5,0.667,0.6212,0.72,0.9074,NA,0.34,"Sin indices compuestos -- misma especificacion que LPM_002A. glmnet binomial, center+scale.",NA,NA,NA,NA,NA
+EN_001B,2026-04-10,Dani,ElasticNet,28,none,5,0.6551,0.5949,0.7289,0.9001,NA,0.31,"Con indices compuestos -- misma especificacion que LPM_002B. glmnet binomial, center+scale.",NA,NA,NA,NA,NA

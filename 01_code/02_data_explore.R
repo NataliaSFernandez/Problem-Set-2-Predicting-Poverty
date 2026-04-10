@@ -14,8 +14,6 @@
 #   2. ¿Qué patrones en los datos confirman o desafían esas hipótesis?
 #   3. ¿Qué tan severo es el desbalance de clases y qué implica para el modelado?
 #
-# AUTOR: Daniel Solano
-# FECHA: 2026-03-14
 #==============================================================================
 
 # ==============================================================================
@@ -31,17 +29,20 @@ pacman::p_load(
   tidyverse,   # manipulación de datos + ggplot2
   corrplot,    # visualización de correlaciones
   skimr,       # resumen rápido de dataframes
-  scales       # formateo de ejes en gráficos
+  scales,       # formateo de ejes en gráficos
+  fs           # manejo de archivos y directorios
 )
 
 # Cargamos los datos limpios que generó Natalia en el script 01
 dir_processed <- "00_data/processed"
+dir_figures   <- "02_outputs/figures"
+fs::dir_create(dir_figures, recurse = TRUE)
 train <- readRDS(file.path(dir_processed, "train_final.rds"))
 test  <- readRDS(file.path(dir_processed, "test_final.rds"))
 
 # Convertimos 'pobre' a factor con etiquetas legibles para los gráficos
 # 0 = No pobre, 1 = Pobre
-train <- train %>%
+train <- train |>
   mutate(pobre_f = factor(pobre, levels = c(0, 1), labels = c("No pobre", "Pobre")))
 
 cat("Train:", nrow(train), "hogares |", ncol(train), "columnas\n")
@@ -89,7 +90,7 @@ ggplot(tabla_pobre, aes(x = pobre_f, y = n, fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("01_desbalance_clases.png", width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "01_desbalance_clases.png"), width = 7, height = 5, dpi = 150)
 
 
 # ==============================================================================
@@ -224,7 +225,7 @@ ggplot(top_corr, aes(x = reorder(variable, corr_pobre), y = corr_pobre,
   geom_col(width = 0.7) +
   coord_flip() +
   scale_fill_manual(values = c("TRUE" = "#E84855", "FALSE" = "#2E86AB"),
-                    labels = c("Reduce pobreza", "Aumenta pobreza")) +
+                  labels = c("TRUE" = "Aumenta pobreza", "FALSE" = "Reduce pobreza"))+
   labs(
     title    = "Correlación de cada variable con la pobreza",
     subtitle = "Top 20 variables más asociadas (correlación de Pearson)",
@@ -234,7 +235,7 @@ ggplot(top_corr, aes(x = reorder(variable, corr_pobre), y = corr_pobre,
   theme_minimal(base_size = 12) +
   theme(legend.position = "bottom")
 
-ggsave("02_correlaciones_pobre.png", width = 8, height = 7, dpi = 150)
+ggsave(file.path(dir_figures, "02_correlaciones_pobre.png"), width = 8, height = 7, dpi = 150)
 
 
 # ==============================================================================
@@ -264,7 +265,7 @@ ggplot(train, aes(x = factor(nivel_educ_jefe), fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "bottom")
 
-ggsave("03_educ_jefe_vs_pobre.png", width = 8, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "03_educ_jefe_vs_pobre.png"), width = 8, height = 5, dpi = 150)
 
 
 # --- 5.2 Ratio de dependencia ---
@@ -283,7 +284,7 @@ ggplot(train, aes(x = pobre_f, y = ratio_depend, fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("04_ratio_depend_vs_pobre.png", width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "04_ratio_depend_vs_pobre.png"), width = 7, height = 5, dpi = 150)
 
 
 # --- 5.3 Proporción de cotizantes a pensión ---
@@ -302,7 +303,7 @@ ggplot(train, aes(x = pobre_f, y = prop_cotiza_pension, fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("05_pension_vs_pobre.png", width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "05_pension_vs_pobre.png"), width = 7, height = 5, dpi = 150)
 
 
 # --- 5.4 Tasa de ocupación del hogar ---
@@ -321,7 +322,7 @@ ggplot(train, aes(x = pobre_f, y = tasa_ocupacion, fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("06_tasa_ocup_vs_pobre.png", width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "06_tasa_ocup_vs_pobre.png"), width = 7, height = 5, dpi = 150)
 
 
 # --- 5.5 Proporción con régimen subsidiado de salud ---
@@ -340,7 +341,7 @@ ggplot(train %>% filter(!is.na(prop_subsidiado)),
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("07_subsidiado_vs_pobre.png", width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "07_subsidiado_vs_pobre.png"), width = 7, height = 5, dpi = 150)
 
 
 # --- 5.6 Número de menores de 18 años ---
@@ -358,7 +359,7 @@ ggplot(train, aes(x = factor(n_menores_18), fill = pobre_f)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "bottom")
 
-ggsave("08_menores_vs_pobre.png", width = 8, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "08_menores_vs_pobre.png"), width = 8, height = 5, dpi = 150)
 
 
 # ==============================================================================
@@ -384,7 +385,7 @@ mat_corr <- train %>%
   select(all_of(vars_matriz)) %>%
   cor(use = "pairwise.complete.obs")
 
-png("09_matriz_correlaciones.png", width = 900, height = 800, res = 120)
+png(file.path(dir_figures, "09_matriz_correlaciones.png"), width = 900, height = 800, res = 120)
 corrplot(mat_corr,
          method  = "color",
          type    = "lower",
@@ -449,13 +450,18 @@ cat("  07_subsidiado_vs_pobre.png\n")
 cat("  08_menores_vs_pobre.png\n")
 cat("  09_matriz_correlaciones.png\n")
 # Guardar todas las tablas en un archivo de texto
-sink("02_outputs/figures/resultados_eda.txt")
-cat("=== RESUMEN DESCRIPTIVO GENERAL ===\n\n")
-print(skim_result)
-cat("\n\n=== VARIABLES CON MAS DE 10% NAs ===\n\n")
-print(vars_na)
-cat("\n\n=== MEDIAS POR GRUPO (POBRES vs NO POBRES) ===\n\n")
-print(tabla_medias, n = 30)
-cat("\n\n=== TOP 20 CORRELACIONES CON POBREZA ===\n\n")
-print(head(correlaciones, 20))
-sink()
+tryCatch({
+  sink(file.path(dir_figures, "resultados_eda.txt"))
+  cat("=== RESUMEN DESCRIPTIVO GENERAL ===\n\n")
+  print(skim_result)
+  cat("\n\n=== VARIABLES CON MAS DE 10% NAs ===\n\n")
+  print(vars_na)
+  cat("\n\n=== MEDIAS POR GRUPO (POBRES vs NO POBRES) ===\n\n")
+  print(tabla_medias, n = 30)
+  cat("\n\n=== TOP 20 CORRELACIONES CON POBREZA ===\n\n")
+  print(head(correlaciones, 20))
+  sink()
+}, error = function(e) {
+  if (sink.number() > 0) sink()
+  message("Error guardando resultados: ", e$message)
+})
