@@ -6,3 +6,4 @@ NB_001B,2026-04-01,Natalia,NaiveBayes,82,none,5,0.5681,0.4146,0.902,0.875,NA,0.9
 NB_001A,2026-04-09,Natalia,NaiveBayes,96,none,5,0.5584,0.4028,0.9101,0.876,NA,0.95,Sin índices compuestos — misma especificación que LPM_002A. usekernel=FALSE,NA,NA,NA,NA,NA
 NB_001B,2026-04-09,Natalia,NaiveBayes,82,none,5,0.5681,0.4146,0.902,0.875,NA,0.95,Con índices compuestos — misma especificación que LPM_002B. usekernel=FALSE,NA,NA,NA,NA,NA
 CART_cp0001_maxdepth20,2026-04-09,Natalia,CART,108,none,NA,NA,NA,NA,0.8427,NA,0.5,"CART baseline. cp=0.001, maxdepth=20. threshold=0.5 (default). Top vars: subsidiado_x_menores, horas_prom, menores_x_desocup",0.001,20,0.628,0.7239,0.5545
+CART_cv5_F1opt,2026-04-09,Natalia,CART,108,none,5,0.6616,NA,NA,0.9134,NA,0.5,CART tuneado con CV-5. Mejor cp=1e-04. F1 CV-5=0.6616. threshold=0.5 (default).,1e-4,20,0.7295,0.7918,0.6763
