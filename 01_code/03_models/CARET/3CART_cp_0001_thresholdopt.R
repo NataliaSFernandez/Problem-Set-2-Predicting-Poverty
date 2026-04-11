@@ -340,7 +340,7 @@ nueva_fila <- tibble(
   cv_Precision     = round(cv_Precision, 4),
   cv_Recall        = round(cv_Recall,    4),
   auc_roc          = round(auc_roc,      4),
-  kaggle_public_F1 = NA_real_,
+  kaggle_public_F1 = 0,67,
   threshold        = THRESHOLD,
   notas            = paste0("CART cp=", CP_OPT,
                             " (mejor del tuning CV-5). ",
@@ -352,13 +352,15 @@ nueva_fila <- tibble(
   train_Recall     = round(train_Recall,    4)
 )
 
+
 registry <- if (file.exists(reg_path)) {
   existing <- read_csv(reg_path, show_col_types = FALSE)
-  existing <- existing |> filter(.data$model_id != MODEL_ID)
+  existing <- existing |> filter(model_id != MODEL_ID)
   bind_rows(existing, nueva_fila)
 } else {
   nueva_fila
 }
+
 write_csv(registry, reg_path)
 message("  Registro actualizado: ", reg_path)
 

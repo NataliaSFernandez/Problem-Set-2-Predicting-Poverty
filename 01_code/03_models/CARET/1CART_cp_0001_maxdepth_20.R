@@ -1,19 +1,51 @@
 #==============================================================================
 # PROBLEM SET 2: PREDICTING POVERTY
-# Script: 01_code/03_models/Cart_cp_0001_maxdepth_20.R
+# Script: 01_code/03_models/CART_baseline.R
 #==============================================================================
 # ALGORITMO : CART — Classification and Regression Tree (rpart)
-# PASOS:
-#   Paso 2 — Tuning cp con CV-5           
-# Mismo procesamiento que baseline, pero con tuning de cp usando validación cruzada.
-# HIPERPARÁMETROS:
-#   cp (complexity parameter): penaliza la complejidad del árbol.
-#      Valor pequeño = árbol profundo = más flexibilidad, riesgo de overfitting.
-#      Valor grande  = árbol simple  = más generalizable, posible underfitting.
-#      Rango a explorar: 0.0001, 0.0005, 0.001, 0.005
-#   maxdepth: profundidad máxima del árbol (20 = prácticamente sin límite).
+# AUTOR     : Natalia
+#
+# DESCRIPCIÓN:
+#   Baseline de CART con todas las variables y cp = 0.001 (sin tuning de
+#   hiperparámetros). El threshold de clasificación se mantiene en 0.5
+#   (default). Este script sirve como punto de referencia para comparar
+#   con versiones tuneadas (cp óptimo, threshold OOF, class weights).
+#
+# ESTRATEGIA DE VARIABLES:
+#   Se usan TODAS las variables del train_final. CART puede manejar
+#   variables redundantes y correlacionadas sin problema — simplemente
+#   elige en cada partición la variable que más reduce el Gini, e ignora
+#   las que no aportan. No hay penalización por incluir derivadas.
+#
+# HIPERPARÁMETROS (fijos en este script):
+#   cp = 0.001     → poda moderada, árbol razonablemente profundo
+#   maxdepth = 20  → prácticamente sin límite de profundidad
+#   threshold = 0.5 → default, sin optimización CV-OOF
+#   (Ver CART_cp0001_threshold_opt.R para versión con threshold óptimo)
+#
+# PREPROCESAMIENTO:
+#   rpart acepta NAs nativamente (surrogate splits).
+#   Solo se requiere:
+#     - zona ("1"/"2" chr) → numérico
+#     - ciudad y dpto (alta cardinalidad, 24+ niveles) → eliminar
+#       Las variables costa_caribe, bogota, eje_cafetero ya capturan región
+#     - demás character → factor
+#
+# OUTPUTS:
+#   03_submissions/CART_baseline.csv
+#   02_outputs/models/CARTs/CART_baseline.pdf   (árbol podado para visualizar)
+#   02_outputs/models/CARTs/threshold_baseline.png
+#   02_outputs/models/CARTs/roc_baseline.png
+#   02_outputs/models/CARTs/prcurve_baseline.png
+#   02_outputs/model_registry.csv               (append)
+#
+# COLUMNAS DE REGISTRY:
+#   model_id, fecha, autor, algoritmo, n_features, imbalance_strategy,
+#   cv_folds, cv_F1, cv_Precision, cv_Recall, auc_roc, kaggle_public_F1,
+#   threshold, notas, cp, maxdepth, train_F1, train_Precision, train_Recall
 #==============================================================================
 # nolint start
+
 # -- 0. Paquetes -------------------------------------------------------------
 library(tidyverse)
 library(rpart)
@@ -21,178 +53,192 @@ library(rpart.plot)
 library(caret)
 library(pROC)
 library(fs)
-# -- 1. Carga de datos -------------------------------------------------------
-message("== Cargando datos ==")
- 
-train <- readRDS("00_data/processed/train_final.rds")
-test  <- readRDS("00_data/processed/test_final.rds")
-ids   <- test$id
- 
+
+# -- 1. Configuración --------------------------------------------------------
 AUTOR    <- "Natalia"
-MODEL_ID <- "CART_cv5_F1opt"
- 
-# Rutas de outputs
+MODEL_ID <- "CART_baseline_cp001"
+CP       <- 0.001
+MAXDEPTH <- 20
+THRESHOLD <- 0.5   # default — sin optimización CV-OOF
+
 dir_model <- "02_outputs/models/CARTs"
 dir_subs  <- "03_submissions"
 reg_path  <- "02_outputs/model_registry.csv"
- 
+
 fs::dir_create(dir_model,    recurse = TRUE)
 fs::dir_create(dir_subs,     recurse = TRUE)
 fs::dir_create("02_outputs", recurse = TRUE)
- 
-# -- 2. Preprocesamiento mínimo para rpart -----------------------------------
+fs::dir_create("00_data/processed", recurse = TRUE)
+
+# -- 2. Carga de datos -------------------------------------------------------
+message("== Cargando datos ==")
+
+train <- readRDS("00_data/processed/train_final.rds")
+test  <- readRDS("00_data/processed/test_final.rds")
+ids   <- test$id
+
+message("  train: ", nrow(train), " x ", ncol(train))
+message("  test:  ", nrow(test),  " x ", ncol(test))
+message("  Prevalencia pobre: ",
+        round(mean(train$pobre == 1) * 100, 1), "%")
+
+# -- 3. Preprocesamiento -----------------------------------------------------
 message("\n== Preprocesando variables ==")
- 
+
 preparar_X_cart <- function(df) {
   df |>
     select(-any_of(c("id", "pobre"))) |>
- 
-    # zona: "1"/"2" (character) → numérico
     mutate(zona = as.numeric(zona)) |>
- 
-    # ciudad y dpto: character de alta cardinalidad
-    # Con 24+ niveles, rpart crea ramas con muy pocas obs → no generaliza
-    # Las variables costa_caribe, bogota, eje_cafetero ya capturan la región
     select(-any_of(c("ciudad", "dpto"))) |>
     mutate(across(where(is.character), as.factor))
 }
- 
+
 X_train <- preparar_X_cart(train)
 X_test  <- preparar_X_cart(test)
+
 niveles <- c("0", "1")
 y_train <- factor(train$pobre, levels = niveles)
- 
-# Alinear columnas train/test
+
 cols_comunes <- intersect(names(X_train), names(X_test))
+solo_train   <- setdiff(names(X_train), names(X_test))
+solo_test    <- setdiff(names(X_test),  names(X_train))
+
+if (length(solo_train) > 0)
+  message("  Solo en train (se eliminan): ", paste(solo_train, collapse = ", "))
+if (length(solo_test) > 0)
+  message("  Solo en test  (se eliminan): ", paste(solo_test,  collapse = ", "))
+
 X_train <- X_train |> select(all_of(cols_comunes))
 X_test  <- X_test  |> select(all_of(cols_comunes))
- 
-# Unir X e y para rpart (usa sintaxis de fórmula pobre ~ .)
+
+message("  Predictores finales: ", ncol(X_train))
+message("  NAs en X_train (rpart los maneja nativamente): ", sum(is.na(X_train)))
+message("  y_train: ", sum(y_train == "1"), " pobres (1) | ",
+        sum(y_train == "0"), " no pobres (0)")
+
 train_cart <- bind_cols(X_train, pobre = y_train)
- 
+
 # =============================================================================
-# PASO 2 — TUNING CON CV-5 + GRILLA DE cp
+# PASO 1 — ENTRENAR ÁRBOL BASELINE
 # =============================================================================
 message("\n========================================")
-message("PASO 2 — Tuning CART con CV-5")
+message("PASO 1 — Entrenando CART baseline")
 message("========================================")
-message("  Grilla: 4 valores de cp")
-message("  Tiempo estimado: 3-8 minutos")
- 
-# F1 calculado manualmente — sin dependencia de MLmetrics
-# TP / (TP + 0.5*(FP+FN)) es equivalente a 2*TP / (2*TP + FP + FN)
-f1_manual <- function(obs, pred, positive = "1") {
-  TP <- sum(obs == positive & pred == positive)
-  FP <- sum(obs != positive & pred == positive)
-  FN <- sum(obs == positive & pred != positive)
-  if ((2 * TP + FP + FN) == 0) return(NA_real_)
-  2 * TP / (2 * TP + FP + FN)
-}
- 
-f1_summary <- function(data, lev = NULL, model = NULL) {
-  f1 <- tryCatch({
-    obs  <- as.character(data$obs)
-    pred <- as.character(data$pred)
-    f1_manual(obs, pred, positive = "1")
-  }, error = function(e) {
-    NA_real_
-  })
-  c(F1 = f1)
-}
- 
-ctrl_cv <- trainControl(
-  method          = "cv",
-  number          = 5,
-  summaryFunction = f1_summary,
-  classProbs      = FALSE,
-  verboseIter     = TRUE,
-  savePredictions = "final"
-)
- 
-# Grilla: 4 valores de cp que cubren el rango relevante
-tune_grid <- expand.grid(
-  cp = c(0.0001, 0.0005, 0.001, 0.005)
-)
- 
+message("  cp = ", CP, "  |  maxdepth = ", MAXDEPTH)
+message("  threshold = ", THRESHOLD, " (default, sin optimización CV-OOF)")
+
 set.seed(42)
 t0 <- Sys.time()
- 
-# Se pasa X_train e y_train directamente (interfaz x/y) para evitar
-# ambigüedades con la fórmula cuando pobre es 0/1 numérico
-cart_cv <- train(
-  x         = X_train,
-  y         = y_train,
-  method    = "rpart",
-  trControl = ctrl_cv,
-  tuneGrid  = tune_grid,
-  metric    = "F1"
-)
- 
-t1 <- Sys.time()
-message("  Tiempo CV: ",
-        round(as.numeric(difftime(t1, t0, units = "mins")), 1), " min")
- 
-cat("\n-- Resultados por cp (CV-5) --\n")
-print(cart_cv$results |>
-        arrange(desc(F1)) |>
-        mutate(across(where(is.numeric), ~ round(., 4))))
- 
-best_cp    <- cart_cv$bestTune$cp
-best_f1_cv <- max(cart_cv$results$F1, na.rm = TRUE)
-message("  Mejor cp según CV-5: ", best_cp)
-message("  Mejor F1 en CV-5:    ", round(best_f1_cv, 4))
- 
-# Re-entrenar con el mejor cp sobre todos los datos de train
-cart_v2 <- rpart(
+
+cart_v1 <- rpart(
   pobre ~ .,
   data    = train_cart,
   method  = "class",
   control = rpart.control(
-    cp        = best_cp,
-    maxdepth  = 20,
+    cp        = CP,
+    maxdepth  = MAXDEPTH,
     minsplit  = 20,
     minbucket = 7
   )
 )
- 
-message("  Nodos terminales del mejor árbol: ",
-        sum(cart_v2$frame$var == "<leaf>"))
- 
-# Evaluación en train
-pred_train_v2 <- factor(
-  as.character(predict(cart_v2, newdata = X_train, type = "class")),
+
+t1 <- Sys.time()
+message("  Tiempo: ",
+        round(as.numeric(difftime(t1, t0, units = "secs")), 1), " seg")
+message("  Nodos terminales: ", sum(cart_v1$frame$var == "<leaf>"))
+message("  Variables usadas: ",
+        length(unique(cart_v1$frame$var[cart_v1$frame$var != "<leaf>"])))
+
+cp_optimo_sugerido <- cart_v1$cptable[
+  which.min(cart_v1$cptable[, "xerror"]), "CP"]
+message("  cp con menor error CV interno: ", round(cp_optimo_sugerido, 6))
+
+# Visualización — copia podada para que sea legible
+cat("\n-- Árbol guardado en PDF --\n")
+pdf(file.path(dir_model, "CART_baseline.pdf"), width = 12, height = 10)
+rpart.plot(
+  prune(cart_v1, cp = 0.01),
+  type          = 4,
+  extra         = 104,
+  under         = TRUE,
+  fallen.leaves = FALSE,
+  main          = "CART baseline — primeros niveles (cp=0.01 para visualizacion)",
+  tweak         = 0.85
+)
+dev.off()
+message("  Árbol guardado: ", file.path(dir_model, "CART_baseline.pdf"))
+
+# -- Importancia de variables ------------------------------------------------
+cat("\n-- Importancia de variables (top 25) --\n")
+imp_df <- tibble(
+  variable    = names(cart_v1$variable.importance),
+  importancia = cart_v1$variable.importance
+) |>
+  arrange(desc(importancia)) |>
+  mutate(
+    pct      = importancia / sum(importancia),
+    pct_acum = cumsum(pct),
+    pct_fmt  = paste0(round(pct      * 100, 1), "%"),
+    acum_fmt = paste0(round(pct_acum * 100, 1), "%")
+  )
+
+imp_df |>
+  head(25) |>
+  select(variable, pct_fmt, acum_fmt) |>
+  print(n = 25)
+
+vars_top10 <- imp_df |> head(10)               |> pull(variable)
+vars_top20 <- imp_df |> head(20)               |> pull(variable)
+vars_top90 <- imp_df |> filter(pct_acum<=0.90) |> pull(variable)
+
+message("\n  Top 10 variables:")
+cat("  ", paste(vars_top10, collapse = ", "), "\n")
+message("  Variables con 90% de importancia: ", length(vars_top90))
+
+saveRDS(imp_df,     "00_data/processed/cart_importancia.rds")
+saveRDS(vars_top10, "00_data/processed/cart_vars_top10.rds")
+saveRDS(vars_top20, "00_data/processed/cart_vars_top20.rds")
+saveRDS(vars_top90, "00_data/processed/cart_vars_top90.rds")
+
+# -- Evaluación en train (threshold = 0.5) -----------------------------------
+probs_train <- predict(cart_v1, newdata = X_train, type = "prob")[, "1"]
+
+pred_train_v1 <- factor(
+  as.character(predict(cart_v1, newdata = X_train, type = "class")),
   levels = niveles
 )
-cm_v2 <- confusionMatrix(pred_train_v2, y_train, positive = "1")
- 
-cat("\n-- Métricas v2 (train) --\n")
-cat("  F1:        ", round(cm_v2$byClass["F1"],        4), "\n")
-cat("  Precision: ", round(cm_v2$byClass["Precision"], 4), "\n")
-cat("  Recall:    ", round(cm_v2$byClass["Recall"],    4), "\n")
- 
-# Submission v2
-pred_test_v2  <- predict(cart_v2, newdata = X_test, type = "class")
-submission_v2 <- tibble(id = ids,
-                         pobre = as.integer(as.character(pred_test_v2) == "1"))
-write_csv(submission_v2, file.path(dir_subs, "CART_cp_0.0001_F1opt.csv"))
-message("\n  Guardado: ", file.path(dir_subs, "CART_cp_0.0001_F1opt.csv"))
-message("  Pobres predichos: ", sum(submission_v2$pobre),
-        " (", round(mean(submission_v2$pobre) * 100, 1), "%)")
- 
+cm_train <- confusionMatrix(pred_train_v1, y_train, positive = "1")
+
+TP <- cm_train$table["1", "1"]
+FN <- cm_train$table["0", "1"]
+FP <- cm_train$table["1", "0"]
+TN <- cm_train$table["0", "0"]
+
+train_F1        <- cm_train$byClass["F1"]
+train_Precision <- cm_train$byClass["Precision"]
+train_Recall    <- cm_train$byClass["Recall"]
+
+cat("\n-- Matriz de confusión (train, threshold = 0.5) --\n")
+print(cm_train$table)
+
+cat("\n-- Métricas (train — OPTIMISTAS, el real lo da Kaggle) --\n")
+cat("  F1:              ", round(train_F1,        4), "\n")
+cat("  Precision:       ", round(train_Precision, 4), "\n")
+cat("  Recall:          ", round(train_Recall,    4), "\n")
+cat("  Accuracy:        ", round(cm_train$overall["Accuracy"], 4), "\n")
+cat("  Exclusión  (FN): ", round(FN / (TP + FN) * 100, 1),
+    "% de pobres clasificados como no pobres\n")
+cat("  Filtración (FP): ", round(FP / (FP + TN) * 100, 1),
+    "% de no pobres clasificados como pobres\n")
+
 # =============================================================================
-# GRÁFICOS: THRESHOLD, ROC, PRECISION-RECALL
+# PASO 2 — GRÁFICOS
 # =============================================================================
-# Los gráficos se construyen sobre las probabilidades del modelo final
-# (cart_v2, re-entrenado con el mejor cp) aplicadas sobre train completo.
-# Son métricas "en muestra" — útiles para visualizar comportamiento del modelo.
 message("\n========================================")
-message("Generando gráficos")
+message("PASO 2 — Generando gráficos")
 message("========================================")
- 
-# Probabilidades del modelo final sobre train (para construir curvas)
-probs_train <- predict(cart_v2, newdata = X_train, type = "prob")[, "1"]
- 
-# AUC-ROC sobre train
+
+# AUC-ROC sobre train (en muestra — optimista)
 roc_obj <- pROC::roc(
   response  = as.integer(as.character(y_train)),
   predictor = probs_train,
@@ -200,83 +246,72 @@ roc_obj <- pROC::roc(
 )
 auc_roc <- as.numeric(pROC::auc(roc_obj))
 message("  AUC-ROC (train, en muestra): ", round(auc_roc, 4))
- 
-# ── Gráfico 1: Threshold ────────────────────────────────────────────────────
+
+# ── Threshold ────────────────────────────────────────────────────────────────
 th_grid <- seq(0.05, 0.95, by = 0.01)
- 
+
 th_results <- map_dfr(th_grid, function(th) {
-  pred_th <- factor(
-    if_else(probs_train >= th, "Pobre", "NoPobre"),
-    levels = c("NoPobre", "Pobre")
-  )
-  obs_th <- factor(
-    if_else(as.integer(as.character(y_train)) == 1, "Pobre", "NoPobre"),
-    levels = c("NoPobre", "Pobre")
-  )
+  pred_th <- factor(if_else(probs_train >= th, "Pobre", "NoPobre"),
+                    levels = c("NoPobre", "Pobre"))
+  obs_th  <- factor(if_else(as.integer(as.character(y_train)) == 1,
+                             "Pobre", "NoPobre"),
+                    levels = c("NoPobre", "Pobre"))
   cm_th <- confusionMatrix(pred_th, obs_th, positive = "Pobre")
-  tibble(
-    threshold = th,
-    F1        = cm_th$byClass["F1"],
-    Precision = cm_th$byClass["Precision"],
-    Recall    = cm_th$byClass["Recall"]
-  )
+  tibble(threshold = th,
+         F1        = cm_th$byClass["F1"],
+         Precision = cm_th$byClass["Precision"],
+         Recall    = cm_th$byClass["Recall"])
 })
- 
+
 th_max_f1 <- th_results |>
   filter(!is.na(F1)) |>
   slice_max(F1, n = 1, with_ties = FALSE) |>
   pull(threshold)
- 
+
+th_label_x     <- if_else(th_max_f1 > 0.80, th_max_f1 - 0.04, th_max_f1 + 0.02)
+th_label_hjust <- if_else(th_max_f1 > 0.80, 1, 0)
+
 p_threshold <- th_results |>
   filter(!is.na(F1)) |>
-  pivot_longer(cols = c(F1, Precision, Recall), names_to = "metrica") |>
-  ggplot(aes(x = threshold, y = value, color = metrica)) +
+  pivot_longer(c(F1, Precision, Recall), names_to = "metrica") |>
+  ggplot(aes(threshold, value, color = metrica)) +
   geom_line(linewidth = 0.9) +
-  geom_vline(xintercept = 0.5,
+  geom_vline(xintercept = THRESHOLD,
              linetype = "dashed", color = "gray30") +
   geom_vline(xintercept = th_max_f1,
              linetype = "dotted", color = "#534AB7", alpha = 0.7) +
-  annotate("text", x = 0.5 + 0.02, y = 0.08,
-           label = "th = 0.5\n(submission)",
+  annotate("text", x = THRESHOLD + 0.02, y = 0.08,
+           label = sprintf("th = %.1f\n(submission)", THRESHOLD),
            hjust = 0, size = 3.2, color = "gray25") +
-  annotate("text", x = th_max_f1 - 0.02, y = 0.25,
+  annotate("text", x = th_label_x, y = 0.22,
            label = sprintf("th = %.2f\n(max F1 train)", th_max_f1),
-           hjust = 1, size = 3.0, color = "#534AB7") +
+           hjust = th_label_hjust, size = 3.0, color = "#534AB7") +
   scale_color_manual(
     values = c(F1 = "#534AB7", Precision = "#E84855", Recall = "#2196F3"),
-    labels = c(
-      F1        = "F1 (balance)",
-      Precision = "Precision (menos filtracion)",
-      Recall    = "Recall (menos exclusion)"
-    )
+    labels = c(F1        = "F1 (balance)",
+               Precision = "Precision (menos filtracion)",
+               Recall    = "Recall (menos exclusion)")
   ) +
   labs(
     title    = paste0("CART: metricas por threshold — ", MODEL_ID),
-    subtitle = paste0("cp optimo = ", best_cp,
-                      " | CV-5 F1 = ", round(best_f1_cv, 4),
-                      " | calculado sobre train (en muestra)"),
-    x        = "Threshold de clasificacion",
-    y        = "Valor de la metrica",
-    color    = NULL,
-    caption  = "Linea discontinua = threshold usado en la submission (0.5). Punteada = max F1 en train."
+    subtitle = paste0("cp = ", CP, " | calculado sobre train (en muestra — optimista)"),
+    x = "Threshold de clasificacion", y = "Metrica", color = NULL,
+    caption  = "Discontinua = threshold usado en submission (0.5). Punteada = max F1 en train."
   ) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "top")
- 
-ggsave(file.path(dir_model, "threshold_cv5.png"),
+
+ggsave(file.path(dir_model, "threshold_baseline.png"),
        p_threshold, width = 8, height = 5, dpi = 150)
-message("  Guardado: threshold_cv5.png")
- 
-# ── Gráfico 2: Curva ROC ────────────────────────────────────────────────────
-roc_df <- tibble(
-  fpr = 1 - roc_obj$specificities,
-  tpr = roc_obj$sensitivities
-)
- 
-p_roc <- ggplot(roc_df, aes(x = fpr, y = tpr)) +
+message("  Guardado: threshold_baseline.png")
+
+# ── ROC ──────────────────────────────────────────────────────────────────────
+roc_df <- tibble(fpr = 1 - roc_obj$specificities,
+                 tpr = roc_obj$sensitivities)
+
+p_roc <- ggplot(roc_df, aes(fpr, tpr)) +
   geom_line(color = "#534AB7", linewidth = 0.9) +
-  geom_abline(slope = 1, intercept = 0,
-              linetype = "dashed", color = "gray60") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray60") +
   annotate("text", x = 0.72, y = 0.65,
            label = "Clasificador aleatorio",
            size = 3, color = "gray50", angle = 35) +
@@ -287,98 +322,128 @@ p_roc <- ggplot(roc_df, aes(x = fpr, y = tpr)) +
   scale_y_continuous(labels = function(x) paste0(round(x * 100), "%")) +
   labs(
     title    = paste0("CART: curva ROC — ", MODEL_ID),
-    subtitle = paste0("cp optimo = ", best_cp,
-                      " | Probabilidades sobre train (en muestra)"),
-    x        = "Tasa de Falsos Positivos  (1 - Specificity)",
-    y        = "Tasa de Verdaderos Positivos  (Recall)",
+    subtitle = paste0("cp = ", CP, " | Probabilidades sobre train (en muestra)"),
+    x = "Tasa de Falsos Positivos (1 - Specificity)",
+    y = "Tasa de Verdaderos Positivos (Recall)",
     caption  = "AUC en muestra es optimista. Leer junto con la curva PR."
   ) +
   coord_equal() +
   theme_minimal(base_size = 12)
- 
-ggsave(file.path(dir_model, "roc_cv5.png"),
+
+ggsave(file.path(dir_model, "roc_baseline.png"),
        p_roc, width = 6, height = 6, dpi = 150)
-message("  Guardado: roc_cv5.png")
- 
-# ── Gráfico 3: Curva Precision-Recall ───────────────────────────────────────
+message("  Guardado: roc_baseline.png")
+
+# ── Precision-Recall ─────────────────────────────────────────────────────────
 pr_df <- tibble(
   TP        = roc_obj$sensitivities        * sum(y_train == "1"),
   FP        = (1 - roc_obj$specificities) * sum(y_train == "0"),
   recall    = roc_obj$sensitivities,
   precision = TP / (TP + FP)
-) |>
-  filter(is.finite(precision), is.finite(recall))
- 
-p_prcurve <- ggplot(pr_df, aes(x = recall, y = precision)) +
+) |> filter(is.finite(precision), is.finite(recall))
+
+p_prcurve <- ggplot(pr_df, aes(recall, precision)) +
   geom_line(color = "#534AB7", linewidth = 0.9) +
   geom_hline(yintercept = mean(train$pobre),
              linetype = "dashed", color = "gray60") +
   annotate("text", x = 0.85, y = mean(train$pobre) + 0.015,
-           label = sprintf("Clasificador aleatorio (%.0f%%)",
-                           mean(train$pobre) * 100),
+           label = sprintf("Azar (%.0f%%)", mean(train$pobre) * 100),
            size = 3, color = "gray50") +
   labs(
-    title    = paste0("CART: curva Precision-Recall — ", MODEL_ID),
-    subtitle = sprintf("AUC-ROC: %.4f | cp optimo = %s | train (en muestra)",
-                       auc_roc, best_cp),
-    x        = "Recall  (fraccion de pobres capturada)",
-    y        = "Precision  (fraccion de predichos pobres que lo son)",
+    title    = paste0("CART: curva PR — ", MODEL_ID),
+    subtitle = sprintf("AUC-ROC: %.4f | cp = %s | train (en muestra)", auc_roc, CP),
+    x = "Recall (fraccion de pobres capturada)",
+    y = "Precision (fraccion de predichos pobres que lo son)",
     caption  = "La curva por encima de la linea punteada indica mejor que el azar."
   ) +
   theme_minimal(base_size = 12)
- 
-ggsave(file.path(dir_model, "prcurve_cv5.png"),
+
+ggsave(file.path(dir_model, "prcurve_baseline.png"),
        p_prcurve, width = 6, height = 5, dpi = 150)
-message("  Guardado: prcurve_cv5.png")
- 
+message("  Guardado: prcurve_baseline.png")
+
 # =============================================================================
-# REGISTRO EN model_registry.csv
+# PASO 3 — SUBMISSION
 # =============================================================================
-# ┌─────────────────────────────────────────────────────────────────────┐
-# │  DESPUÉS DE SUBIR A KAGGLE: completar kaggle_public_F1 manualmente │
-# └─────────────────────────────────────────────────────────────────────┘
 message("\n========================================")
-message("Registro en model_registry.csv")
+message("PASO 3 — Submission")
 message("========================================")
- 
-train_F1        <- cm_v2$byClass["F1"]
-train_Precision <- cm_v2$byClass["Precision"]
-train_Recall    <- cm_v2$byClass["Recall"]
- 
+
+pred_test_v1  <- predict(cart_v1, newdata = X_test, type = "class")
+submission_v1 <- tibble(id = ids,
+                         pobre = as.integer(as.character(pred_test_v1) == "1"))
+sub_file <- file.path(dir_subs, "CART_baseline.csv")
+write_csv(submission_v1, sub_file)
+
+message("  Guardado: ", sub_file)
+message("  Pobres predichos: ", sum(submission_v1$pobre),
+        " (", round(mean(submission_v1$pobre) * 100, 1), "%)")
+message("  -> Subir a Kaggle y anotar kaggle_public_F1 en model_registry.csv")
+
+# =============================================================================
+# PASO 4 — REGISTRY
+# =============================================================================
+message("\n========================================")
+message("PASO 4 — Registro en model_registry.csv")
+message("========================================")
+
+# cv_F1, cv_Precision, cv_Recall = NA porque este baseline no usa CV-OOF
+# Para versión con CV-OOF ver CART_cp0001_threshold_opt.R
+
 nueva_fila <- tibble(
   model_id           = MODEL_ID,
   fecha              = Sys.Date(),
   autor              = AUTOR,
   algoritmo          = "CART",
-  cp                 = best_cp,
-  maxdepth           = 20,
   n_features         = ncol(X_train),
   imbalance_strategy = "none",
-  cv_folds           = 5L,
-  cv_F1              = round(best_f1_cv,   4),
-  train_F1           = round(train_F1,     4),
+  cv_folds           = NA_integer_,
+  cv_F1              = NA_real_,
+  cv_Precision       = NA_real_,
+  cv_Recall          = NA_real_,
+  auc_roc            = round(auc_roc,         4),
+  kaggle_public_F1   = 0.62,
+  threshold          = THRESHOLD,
+  notas              = paste0("Baseline CART. cp=", CP,
+                              ", maxdepth=", MAXDEPTH,
+                              ". threshold=0.5 (default, sin CV-OOF). ",
+                              "Top vars: ", paste(vars_top10[1:3], collapse=", ")),
+  cp                 = CP,
+  maxdepth           = MAXDEPTH,
+  train_F1           = round(train_F1,        4),
   train_Precision    = round(train_Precision, 4),
-  train_Recall       = round(train_Recall, 4),
-  auc_roc            = round(auc_roc,      4),
-  threshold          = 0.5,
-  kaggle_public_F1   = NA_real_,
-  notas              = paste0(
-    "CART tuneado con CV-5. Mejor cp=", best_cp,
-    ". F1 CV-5=", round(best_f1_cv, 4), ". threshold=0.5 (default)."
-  )
+  train_Recall       = round(train_Recall,    4)
 )
- 
-if (file.exists(reg_path)) {
-  registry <- read_csv(reg_path, show_col_types = FALSE)
-  registry <- registry |> filter(model_id != MODEL_ID)
-  registry <- bind_rows(registry, nueva_fila)
+
+registry <- if (file.exists(reg_path)) {
+  existing <- read_csv(reg_path, show_col_types = FALSE)
+  existing <- existing |> filter(model_id != MODEL_ID)
+  bind_rows(existing, nueva_fila)
 } else {
-  registry <- nueva_fila
+  nueva_fila
 }
+
 write_csv(registry, reg_path)
 message("  Registro actualizado: ", reg_path)
- 
+
 cat("\n-- Fila registrada --\n")
 print(nueva_fila)
- 
+
+# =============================================================================
+# RESUMEN
+# =============================================================================
+message("\n========================================")
+message("RESUMEN — ", MODEL_ID)
+message("========================================")
+message("  cp = ", CP, " | maxdepth = ", MAXDEPTH, " | threshold = ", THRESHOLD)
+message("  F1 train:    ", round(train_F1,        4), "  (optimista)")
+message("  AUC-ROC:     ", round(auc_roc,         4), "  (en muestra)")
+message("  Submission:  ", sub_file)
+message("")
+message("  Gráficos: ", dir_model)
+message("    threshold_baseline.png")
+message("    roc_baseline.png")
+message("    prcurve_baseline.png")
+message("    CART_baseline.pdf")
+
 # nolint end

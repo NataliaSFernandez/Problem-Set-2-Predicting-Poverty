@@ -334,9 +334,7 @@ message("  Guardado: prcurve_cv5.png")
 # =============================================================================
 # REGISTRO EN model_registry.csv
 # =============================================================================
-# ┌─────────────────────────────────────────────────────────────────────┐
-# │  DESPUÉS DE SUBIR A KAGGLE: completar kaggle_public_F1 manualmente │
-# └─────────────────────────────────────────────────────────────────────┘
+
 message("\n========================================")
 message("Registro en model_registry.csv")
 message("========================================")
@@ -361,7 +359,7 @@ nueva_fila <- tibble(
   train_Recall       = round(train_Recall, 4),
   auc_roc            = round(auc_roc,      4),
   threshold          = 0.5,
-  kaggle_public_F1   = NA_real_,
+  kaggle_public_F1   = 0.66,
   notas              = paste0(
     "CART tuneado con CV-5. Mejor cp=", best_cp,
     ". F1 CV-5=", round(best_f1_cv, 4), ". threshold=0.5 (default)."
