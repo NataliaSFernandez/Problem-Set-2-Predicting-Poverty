@@ -1,0 +1,70 @@
+=== ELASTIC NET --  EN_001B  ===
+
+Predictores: 28 
+alpha: 1 
+lambda: 1e-04 
+Threshold optimo: 0.31 
+F1 OOF: 0.6551 
+Precision OOF: 0.5949 
+Recall OOF: 0.7289 
+AUC-ROC: 0.9001 
+
+-- Confusion Matrix (OOF) --
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     No    Yes
+       No  115545   8954
+       Yes  16391  24070
+                                          
+               Accuracy : 0.8464          
+                 95% CI : (0.8446, 0.8481)
+    No Information Rate : 0.7998          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.5576          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.7289          
+            Specificity : 0.8758          
+         Pos Pred Value : 0.5949          
+         Neg Pred Value : 0.9281          
+             Prevalence : 0.2002          
+         Detection Rate : 0.1459          
+   Detection Prevalence : 0.2453          
+      Balanced Accuracy : 0.8023          
+                                          
+       'Positive' Class : Yes             
+                                          
+
+-- Todos los coeficientes no cero --
+            variable  coeficiente
+1  arriendo_estimado -1.309462504
+2  valor_alojamiento -1.247872442
+3         n_ocupados -0.844465616
+4    prop_subsidiado  0.772822858
+5     tasa_ocupacion -0.733883238
+6    num_personas_ug  0.633644872
+7          edad_prom -0.427828156
+8    nivel_educ_prom -0.392687835
+9      prop_informal  0.362678391
+10      n_menores_18  0.334840478
+11       num_cuartos -0.321070511
+12      num_personas  0.293440190
+13        horas_prom -0.281218424
+14       n_inactivos -0.229597473
+15     tipo_tenencia  0.227362653
+16   prop_cta_propia  0.213292297
+17   prop_afil_salud -0.191638315
+18   prop_2do_empleo -0.115455915
+19    prop_subempleo  0.114909006
+20      prop_mujeres  0.070084275
+21   nivel_educ_jefe -0.062993488
+22    tasa_desempleo  0.054323733
+23     n_adultos_may  0.053990311
+24    n_desempleados -0.047986674
+25         edad_jefe  0.021965492
+26    nivel_educ_max  0.020106301
+27   arriendo_pagado  0.007466434
+28  num_cuartos_dorm  0.006377570
