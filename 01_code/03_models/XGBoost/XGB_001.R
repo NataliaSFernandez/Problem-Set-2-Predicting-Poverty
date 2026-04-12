@@ -567,14 +567,15 @@ ggsave(file.path(dir_model, "varimp.png"),
        p_varimp, width = 8, height = 6, dpi = 150)
 message("  Guardado: varimp.png")
 
-# AUC-ROC sobre train (en muestra — métrica optimista, sólo para diagnóstico)
+# AUC-ROC sobre predicciones OOF del CV (honesto — fuera de muestra).
+# probs_oof fue extraído en Sección 9 de xgb_cv$pred filtrado por best params.
 roc_obj <- pROC::roc(
-  response  = as.integer(y_train == "Yes"),
-  predictor = probs_train,
+  response  = as.integer(oof_preds$obs == "Yes"),
+  predictor = probs_oof,
   quiet     = TRUE
 )
 auc_roc <- as.numeric(pROC::auc(roc_obj))
-message("  AUC-ROC (train, en muestra): ", round(auc_roc, 4))
+message("  AUC-ROC (OOF, CV-5, honesto): ", round(auc_roc, 4))
 
 # -- Gráfico 2: Threshold vs F1 / Precision / Recall (sobre predicciones OOF) --
 # Usa th_oof_search ya calculado en la Sección 9 con probabilidades OOF.
@@ -640,10 +641,10 @@ p_roc <- ggplot(roc_df, aes(x = fpr, y = tpr)) +
     title    = paste0("XGBoost: curva ROC — ", MODEL_ID),
     subtitle = paste0("nrounds = ", best_nrounds,
                       " | eta = ", best_eta,
-                      " | Probabilidades sobre train (en muestra)"),
+                      " | Probabilidades OOF — CV-5 (fuera de muestra)"),
     x        = "Tasa de Falsos Positivos  (1 - Specificity)",
     y        = "Tasa de Verdaderos Positivos  (Recall)",
-    caption  = "AUC en muestra es optimista. Leer junto con la curva PR."
+    caption  = "AUC calculado sobre predicciones OOF del CV: estimación honesta."
   ) +
   coord_equal() +
   theme_minimal(base_size = 12)
@@ -653,32 +654,33 @@ ggsave(file.path(dir_model, "roc.png"),
 message("  Guardado: roc.png")
 
 # -- Gráfico 4: Curva Precision-Recall -----------------------------------------
-# Derivada de la curva ROC: para cada threshold implícito, calcula Precision
-# y Recall. Más informativa que la ROC en presencia de desbalance porque
-# Precision depende de los falsos positivos (que son abundantes).
+# Derivada de la curva ROC OOF: para cada threshold implícito calcula Precision
+# y Recall sobre las mismas predicciones fuera de muestra.
+n_pos_oof <- sum(oof_preds$obs == "Yes")
+n_neg_oof <- sum(oof_preds$obs != "Yes")
 pr_df <- tibble(
-  TP        = roc_obj$sensitivities        * sum(y_train == "Yes"),
-  FP        = (1 - roc_obj$specificities) * sum(y_train == "No"),
+  TP        = roc_obj$sensitivities       * n_pos_oof,
+  FP        = (1 - roc_obj$specificities) * n_neg_oof,
   recall    = roc_obj$sensitivities,
   precision = TP / (TP + FP)
 ) |>
   filter(is.finite(precision), is.finite(recall))
 
+prev_oof <- n_pos_oof / (n_pos_oof + n_neg_oof)
 p_prcurve <- ggplot(pr_df, aes(x = recall, y = precision)) +
   geom_line(color = "#534AB7", linewidth = 0.9) +
-  geom_hline(yintercept = mean(train$pobre),
+  geom_hline(yintercept = prev_oof,
              linetype = "dashed", color = "gray60") +
-  annotate("text", x = 0.85, y = mean(train$pobre) + 0.015,
-           label = sprintf("Clasificador aleatorio (%.0f%%)",
-                           mean(train$pobre) * 100),
+  annotate("text", x = 0.85, y = prev_oof + 0.015,
+           label = sprintf("Clasificador aleatorio (%.0f%%)", prev_oof * 100),
            size = 3, color = "gray50") +
   labs(
     title    = paste0("XGBoost: curva Precision-Recall — ", MODEL_ID),
-    subtitle = sprintf("AUC-ROC: %.4f | nrounds = %d | eta = %.2f | train (en muestra)",
+    subtitle = sprintf("AUC-ROC OOF: %.4f | nrounds = %d | eta = %.2f | OOF — CV-5",
                        auc_roc, best_nrounds, best_eta),
     x        = "Recall  (fracción de pobres capturada)",
     y        = "Precision  (fracción de predichos pobres que lo son)",
-    caption  = "La curva por encima de la línea punteada indica mejor que el azar."
+    caption  = "Curva calculada sobre predicciones OOF del CV: estimación honesta."
   ) +
   theme_minimal(base_size = 12)
 
@@ -690,8 +692,8 @@ message("  Guardado: prcurve.png")
 # sin necesidad de re-entrenar el modelo.
 saveRDS(
   list(xgb_cv     = xgb_cv,       # resultados de CV + finalModel de caret
-       roc_obj    = roc_obj,       # objeto pROC para reconstruir la curva ROC
-       th_results = th_results,    # data frame threshold vs métricas
+       roc_obj    = roc_obj,       # objeto pROC — OOF (honesto)
+       th_results = th_results,    # data frame threshold vs métricas OOF
        varimp     = varimp_xgb),   # importancias de variables (Gain)
   file.path(dir_model, "diagnostics.rds")
 )

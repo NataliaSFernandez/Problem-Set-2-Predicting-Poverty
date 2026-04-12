@@ -326,54 +326,29 @@ message("  Precision CV-5:      ", round(best_prec_cv,   4))
 message("  Recall CV-5:         ", round(best_recall_cv, 4))
 
 # =============================================================================
-# SECCIÓN 8b: THRESHOLD ÓPTIMO POR CV OOF
+# SECCIÓN 8b: PREDICCIONES OOF DEL CV — PARA CURVAS ROC Y PR
 # =============================================================================
-# Usamos las predicciones OOF (out-of-fold) del CV para buscar el threshold
-# que maximiza F1. Cada observación es predicha exactamente una vez — por el
-# fold en que NO estuvo durante el entrenamiento. Esto es más honesto que usar
-# probabilidades en muestra y más consistente con los demás modelos del equipo
-# (LPM, XGB) que también optimizan el threshold con OOF.
-#
 # classProbs=TRUE en trainControl activó la columna "Yes" (P̂(pobre=1|X))
-# en rf_cv$pred. Filtramos la combinación de hiperparámetros ganadora y
-# buscamos el threshold que maximiza F1 sobre las 164,960 predicciones OOF.
+# en rf_cv$pred. Filtramos la mejor combinación de hiperparámetros para
+# obtener las predicciones OOF (out-of-fold): cada observación fue predicha
+# exactamente una vez, por el fold en que NO participó del entrenamiento.
+# Estas predicciones se usarán en la Sección 11 para construir las curvas
+# ROC y Precision-Recall honestas (fuera de muestra).
 #
-# Produce: best_th (threshold óptimo), best_oof_f1/pr/rc, th_oof_search
-#          (tabla F1/Precision/Recall vs threshold para graficar).
-message("\n== Optimizando threshold sobre predicciones OOF (CV-5) ==")
+# Nota: el threshold óptimo se calcula sobre predicciones OOB del modelo final
+# en la Sección 9 (estimación nativa de ranger, bootstrap-based).
+#
+# Produce: probs_oof y labels_oof (vectores alineados con y_train) para ROC/PR.
+message("\n== Extrayendo predicciones OOF del CV para curvas ROC/PR ==")
 
-oof_preds <- rf_cv$pred |>
+oof_preds  <- rf_cv$pred |>
   filter(mtry          == best_mtry,
          min.node.size == best_min_node) |>
   arrange(rowIndex)   # garantiza orden original de observaciones
 
 probs_oof  <- oof_preds$Yes
 labels_oof <- oof_preds$obs
-
-th_grid <- seq(0.05, 0.95, by = 0.01)
-
-th_oof_search <- map_dfr(th_grid, function(th) {
-  pred_th <- factor(ifelse(probs_oof >= th, "Yes", "No"), levels = niveles)
-  TP <- sum(pred_th == "Yes" & labels_oof == "Yes")
-  FP <- sum(pred_th == "Yes" & labels_oof == "No")
-  FN <- sum(pred_th == "No"  & labels_oof == "Yes")
-  f1   <- if ((2*TP + FP + FN) == 0) NA_real_ else 2*TP / (2*TP + FP + FN)
-  prec <- if ((TP + FP) == 0)        NA_real_ else TP / (TP + FP)
-  rec  <- if ((TP + FN) == 0)        NA_real_ else TP / (TP + FN)
-  tibble(threshold = th, F1 = f1, Precision = prec, Recall = rec)
-})
-
-best_th_row <- th_oof_search |> filter(!is.na(F1)) |>
-                 slice_max(F1, n = 1, with_ties = FALSE)
-best_th     <- best_th_row$threshold
-best_oof_f1 <- best_th_row$F1
-best_oof_pr <- best_th_row$Precision
-best_oof_rc <- best_th_row$Recall
-
-message("  Threshold óptimo (OOF, max F1): ", best_th)
-message("  F1 OOF:        ", round(best_oof_f1, 4))
-message("  Precision OOF: ", round(best_oof_pr, 4))
-message("  Recall OOF:    ", round(best_oof_rc, 4))
+message("  Predicciones OOF extraídas: ", length(probs_oof), " observaciones")
 
 # =============================================================================
 # SECCIÓN 9: MODELO FINAL
@@ -381,12 +356,16 @@ message("  Recall OOF:    ", round(best_oof_rc, 4))
 # Aunque caret ya guardó un finalModel, lo re-entrenamos con ranger() directo
 # para activar probability = TRUE y importance = "permutation". Estas opciones
 # no están disponibles desde la interfaz de caret pero son necesarias para:
-#   - probability=TRUE  → probabilidades continuas P̂(pobre=1|X) en test
+#   - probability=TRUE  → predicciones OOB continuas P̂(pobre=1|X) y probs en test
 #   - importance="permutation" → importancia por permutación para análisis de features
-# El threshold ya fue optimizado en Sección 8b con predicciones OOF del CV.
 #
-# Produce: rf_final (objeto ranger), probs_train (en muestra, sólo diagnóstico),
-#          pred_train (clase predicha con best_th OOF), cm_final y métricas train_*.
+# El threshold se optimiza sobre predicciones OOB (out-of-bag): cada árbol
+# predice sólo las observaciones que NO usó para entrenar → estimación honesta
+# nativa de ranger sin necesidad de un CV adicional.
+# Las curvas ROC y PR (Sección 11) usan predicciones OOF del CV (Sección 8b).
+#
+# Produce: rf_final (objeto ranger con OOB probs), probs_oob, best_th (OOB),
+#          best_oob_f1/pr/rc, th_oob_search, probs_train, cm_final, métricas train_*.
 message("\n========================================")
 message("Entrenando modelo final sobre todos los datos de train")
 message("========================================")
@@ -404,8 +383,37 @@ rf_final <- ranger::ranger(
   seed          = 42
 )
 
-# Métricas en train con threshold óptimo OOF (en muestra — sólo diagnóstico)
-# best_th viene de Sección 8b (predicciones OOF del CV, más honestas).
+# Probabilidades OOB: cada árbol predice sólo las observaciones que NO usó
+# para entrenar → estimación honesta fuera de muestra, nativa de ranger.
+probs_oob <- rf_final$predictions[, "Yes"]
+
+# Búsqueda del threshold que maximiza F1 sobre probabilidades OOB
+th_grid <- seq(0.05, 0.95, by = 0.01)
+
+th_oob_search <- map_dfr(th_grid, function(th) {
+  pred_th <- factor(ifelse(probs_oob >= th, "Yes", "No"), levels = niveles)
+  TP <- sum(pred_th == "Yes" & y_train == "Yes")
+  FP <- sum(pred_th == "Yes" & y_train == "No")
+  FN <- sum(pred_th == "No"  & y_train == "Yes")
+  f1   <- if ((2*TP + FP + FN) == 0) NA_real_ else 2*TP / (2*TP + FP + FN)
+  prec <- if ((TP + FP) == 0)        NA_real_ else TP / (TP + FP)
+  rec  <- if ((TP + FN) == 0)        NA_real_ else TP / (TP + FN)
+  tibble(threshold = th, F1 = f1, Precision = prec, Recall = rec)
+})
+
+best_th_row  <- th_oob_search |> filter(!is.na(F1)) |>
+                  slice_max(F1, n = 1, with_ties = FALSE)
+best_th      <- best_th_row$threshold
+best_oob_f1  <- best_th_row$F1
+best_oob_pr  <- best_th_row$Precision
+best_oob_rc  <- best_th_row$Recall
+
+message("  Threshold óptimo (OOB, max F1): ", best_th)
+message("  F1 OOB:        ", round(best_oob_f1, 4))
+message("  Precision OOB: ", round(best_oob_pr, 4))
+message("  Recall OOB:    ", round(best_oob_rc, 4))
+
+# Métricas en train con threshold óptimo OOB (en muestra — sólo diagnóstico)
 probs_train <- predict(rf_final, data = X_train)$predictions[, "Yes"]
 pred_train  <- factor(ifelse(probs_train >= best_th, "Yes", "No"), levels = niveles)
 
@@ -419,7 +427,7 @@ cat("  F1:        ", round(train_F1,        4), "\n")
 cat("  Precision: ", round(train_Precision, 4), "\n")
 cat("  Recall:    ", round(train_Recall,    4), "\n")
 # NOTA: estas métricas son en muestra (optimistas). La referencia confiable
-# son las métricas OOF del CV (Sección 8b) con threshold óptimo.
+# es el F1 OOB con threshold óptimo calculado arriba.
 
 # =============================================================================
 # SECCIÓN 10: IMPORTANCIA DE VARIABLES
@@ -497,20 +505,21 @@ message("\n========================================")
 message("Generando gráficos de diagnóstico")
 message("========================================")
 
-# AUC-ROC sobre train (en muestra)
+# AUC-ROC sobre predicciones OOF del CV (honesto — fuera de muestra).
+# probs_oof y labels_oof fueron extraídos en Sección 8b.
 roc_obj <- pROC::roc(
-  response  = as.integer(y_train == "Yes"),
-  predictor = probs_train,
+  response  = as.integer(labels_oof == "Yes"),
+  predictor = probs_oof,
   quiet     = TRUE
 )
 auc_roc <- as.numeric(pROC::auc(roc_obj))
-message("  AUC-ROC (train, en muestra): ", round(auc_roc, 4))
+message("  AUC-ROC (OOF, CV-5, honesto): ", round(auc_roc, 4))
 
-# -- Gráfico 1: Threshold vs F1 / Precision / Recall (sobre predicciones OOF) --
-# Usa th_oof_search calculado en Sección 8b con probabilidades OOF del CV.
-# OOF es honesto (fuera de muestra): cada observación fue predicha por el fold
-# en que NO participó durante el entrenamiento.
-th_results <- th_oof_search   # alias para compatibilidad con saveRDS posterior
+# -- Gráfico 1: Threshold vs F1 / Precision / Recall (sobre predicciones OOB) --
+# Usa th_oob_search calculado en Sección 9 con probabilidades OOB del modelo final.
+# OOB es honesto (fuera de muestra): cada árbol predice sólo las observaciones
+# que no usó durante su entrenamiento — mecanismo nativo de ranger.
+th_results <- th_oob_search   # alias para compatibilidad con saveRDS posterior
 
 p_threshold <- th_results |>
   filter(!is.na(F1)) |>
@@ -522,7 +531,7 @@ p_threshold <- th_results |>
   geom_vline(xintercept = 0.5,
              linetype = "dotted", color = "gray40") +
   annotate("text", x = best_th + 0.02, y = 0.08,
-           label = sprintf("th = %.2f\n(óptimo OOF)", best_th),
+           label = sprintf("th = %.2f\n(óptimo OOB)", best_th),
            hjust = 0, size = 3.2, color = "#534AB7") +
   annotate("text", x = 0.52, y = 0.25,
            label = "th = 0.5", hjust = 0, size = 3.0, color = "gray40") +
@@ -533,13 +542,13 @@ p_threshold <- th_results |>
                Recall    = "Recall (menos exclusión)")
   ) +
   labs(
-    title    = paste0("RF: métricas por threshold (OOF) — ", MODEL_ID),
-    subtitle = sprintf("Threshold óptimo = %.2f | F1 OOF = %.4f | mtry = %d | min.node.size = %d",
-                       best_th, best_oof_f1, best_mtry, best_min_node),
+    title    = paste0("RF: métricas por threshold (OOB) — ", MODEL_ID),
+    subtitle = sprintf("Threshold óptimo = %.2f | F1 OOB = %.4f | mtry = %d | min.node.size = %d",
+                       best_th, best_oob_f1, best_mtry, best_min_node),
     x        = "Threshold de clasificación",
     y        = "Valor de la métrica",
     color    = NULL,
-    caption  = "Línea discontinua = threshold óptimo OOF (submission). Punteada = 0.5."
+    caption  = "Línea discontinua = threshold óptimo OOB (submission). Punteada = 0.5."
   ) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "top")
@@ -569,10 +578,10 @@ p_roc <- ggplot(roc_df, aes(x = fpr, y = tpr)) +
   labs(
     title    = paste0("RF: curva ROC — ", MODEL_ID),
     subtitle = paste0("mtry = ", best_mtry,
-                      " | Probabilidades sobre train (en muestra)"),
+                      " | Probabilidades OOF — CV-5 (fuera de muestra)"),
     x        = "Tasa de Falsos Positivos  (1 - Specificity)",
     y        = "Tasa de Verdaderos Positivos  (Recall)",
-    caption  = "AUC en muestra es optimista. Leer junto con la curva PR."
+    caption  = "AUC calculado sobre predicciones OOF del CV: estimación honesta."
   ) +
   coord_equal() +
   theme_minimal(base_size = 12)
@@ -582,32 +591,34 @@ ggsave(file.path(dir_model, "roc.png"),
 message("  Guardado: roc.png")
 
 # -- Gráfico 3: Curva Precision-Recall ----------------------------------------
-# Derivada de la curva ROC: para cada threshold implícito, calcula Precision
-# y Recall. Más informativa que la ROC en presencia de desbalance porque
-# Precision depende de los falsos positivos (que son abundantes).
+# Derivada de la curva ROC OOF: para cada threshold implícito calcula Precision
+# y Recall sobre las mismas predicciones fuera de muestra. Más informativa que
+# la ROC con desbalance porque Precision depende de los FP, que son abundantes.
+n_pos <- sum(labels_oof == "Yes")
+n_neg <- sum(labels_oof == "No")
 pr_df <- tibble(
-  TP        = roc_obj$sensitivities        * sum(y_train == "Yes"),
-  FP        = (1 - roc_obj$specificities) * sum(y_train == "No"),
+  TP        = roc_obj$sensitivities       * n_pos,
+  FP        = (1 - roc_obj$specificities) * n_neg,
   recall    = roc_obj$sensitivities,
   precision = TP / (TP + FP)
 ) |>
   filter(is.finite(precision), is.finite(recall))
 
+prev_oof <- n_pos / (n_pos + n_neg)   # prevalencia real en OOF
 p_prcurve <- ggplot(pr_df, aes(x = recall, y = precision)) +
   geom_line(color = "#534AB7", linewidth = 0.9) +
-  geom_hline(yintercept = mean(train$pobre),
+  geom_hline(yintercept = prev_oof,
              linetype = "dashed", color = "gray60") +
-  annotate("text", x = 0.85, y = mean(train$pobre) + 0.015,
-           label = sprintf("Clasificador aleatorio (%.0f%%)",
-                           mean(train$pobre) * 100),
+  annotate("text", x = 0.85, y = prev_oof + 0.015,
+           label = sprintf("Clasificador aleatorio (%.0f%%)", prev_oof * 100),
            size = 3, color = "gray50") +
   labs(
     title    = paste0("RF: curva Precision-Recall — ", MODEL_ID),
-    subtitle = sprintf("AUC-ROC: %.4f | mtry = %d | train (en muestra)",
+    subtitle = sprintf("AUC-ROC OOF: %.4f | mtry = %d | OOF — CV-5 (fuera de muestra)",
                        auc_roc, best_mtry),
     x        = "Recall  (fracción de pobres capturada)",
     y        = "Precision  (fracción de predichos pobres que lo son)",
-    caption  = "La curva por encima de la línea punteada indica mejor que el azar."
+    caption  = "Curva calculada sobre predicciones OOF del CV: estimación honesta."
   ) +
   theme_minimal(base_size = 12)
 
@@ -620,12 +631,12 @@ message("  Guardado: prcurve.png")
 saveRDS(
   list(rf_cv           = rf_cv,          # resultados de CV + finalModel de caret
        rf_final        = rf_final,       # modelo final con probability=TRUE e importance
-       roc_obj         = roc_obj,        # objeto pROC (en muestra, diagnóstico)
-       th_results      = th_results,     # data frame threshold vs métricas OOF
+       roc_obj         = roc_obj,        # objeto pROC — OOF (honesto)
+       th_results      = th_results,     # data frame threshold vs métricas OOB
        varimp          = varimp_rf,      # named vector: variable → importancia permutación
        feature_matrix  = feature_matrix, # tabla completa de importancias
-       best_th         = best_th,        # threshold óptimo OOF
-       best_oof_f1     = best_oof_f1),   # F1 OOF con ese threshold
+       best_th         = best_th,        # threshold óptimo OOB
+       best_oob_f1     = best_oob_f1),   # F1 OOB con ese threshold
   file.path(dir_model, "diagnostics.rds")
 )
 message("  Guardado: diagnostics.rds")
@@ -650,7 +661,7 @@ sub_path   <- file.path(dir_subs, paste0("submission_", MODEL_ID, ".csv"))
 write_csv(submission, sub_path)
 
 message("  Guardado: ", sub_path)
-message("  Threshold usado: ", best_th, " (óptimo OOF, Sección 8b)")
+message("  Threshold usado: ", best_th, " (óptimo OOB, Sección 9)")
 message("  Pobres predichos: ", sum(submission$pobre),
         " (", round(mean(submission$pobre) * 100, 1), "%)")
 
@@ -674,21 +685,24 @@ nueva_fila <- tibble(
   n_features         = ncol(X_train),
   imbalance_strategy = "none",
   cv_folds           = 5L,
-  # cv_F1/Precision/Recall: calculados sobre predicciones OOF del CV con threshold óptimo
-  # (consistente con LPM y XGB; más honestos que threshold=0.5 de caret)
-  cv_F1              = round(best_oof_f1, 4),
-  cv_Precision       = round(best_oof_pr, 4),
-  cv_Recall          = round(best_oof_rc, 4),
-  auc_roc            = round(auc_roc,     4),
+  # cv_F1/Precision/Recall: calculados sobre predicciones OOB del modelo final
+  # con threshold óptimo OOB (estimación nativa de ranger, honesta).
+  # auc_roc calculado sobre predicciones OOF del CV (también honesto).
+  cv_F1              = round(best_oob_f1, 4),
+  cv_Precision       = round(best_oob_pr, 4),
+  cv_Recall          = round(best_oob_rc, 4),
+  auc_roc            = round(auc_roc,     4),   # OOF, honesto
   kaggle_public_F1   = NA_real_,       # llenar manualmente después de subir
-  threshold          = best_th,        # threshold óptimo OOF
+  threshold          = best_th,        # threshold óptimo OOB
   notas              = paste0(
     "RF ranger. mtry=", best_mtry,
     " min_node_size=", best_min_node,
     " splitrule=gini num.trees=150.",
-    " Threshold optimizado sobre probs OOF CV-5 (max F1).",
+    " Threshold optimizado sobre probs OOB (max F1).",
+    " Curvas ROC/PR sobre OOF CV-5.",
     " th=", best_th,
-    " F1_OOF=", round(best_oof_f1, 4),
+    " F1_OOB=", round(best_oob_f1, 4),
+    " AUC_OOF=", round(auc_roc, 4),
     " (CV-5 F1 th=0.5: ", round(best_f1_cv, 4), ")."
   ),
   cp             = NA_real_,
