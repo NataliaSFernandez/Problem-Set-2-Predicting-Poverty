@@ -45,7 +45,7 @@ library(caret)
 library(pROC)
 library(fs)
 
-dir_outputs_nb  <- "02_outputs/models/NB/NB_002"  # NB con variables seleccionadas por RF
+dir_outputs_nb  <- "02_outputs/models/NB/feature"  # NB con variables seleccionadas por RF
 dir_submissions <- "03_submissions"
 registry_path   <- "02_outputs/model_registry.csv"
 
