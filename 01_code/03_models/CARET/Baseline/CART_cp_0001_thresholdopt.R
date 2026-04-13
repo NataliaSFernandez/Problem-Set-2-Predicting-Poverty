@@ -34,7 +34,7 @@ MODEL_ID <- "CART_cp0001_thopt"
 CP_OPT   <- 0.0001     # mejor cp encontrado en el tuning anterior
 K_FOLDS  <- 5
 
-dir_model <- "02_outputs/models/CARTs"
+dir_model <- "02_outputs/models/CARTs/Baseline/CART_cp0001_thopt"
 dir_subs  <- "03_submissions"
 reg_path  <- "02_outputs/model_registry.csv"
 

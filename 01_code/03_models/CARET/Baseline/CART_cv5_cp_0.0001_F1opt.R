@@ -32,7 +32,7 @@ AUTOR    <- "Natalia"
 MODEL_ID <- "CART_cv5_F1opt"
 
 # Rutas de outputs
-dir_model <- "02_outputs/models/CARTs"
+dir_model <- "02_outputs/models/CARTs/Baseline/CART_cv5_F1opt"
 dir_subs  <- "03_submissions"
 reg_path  <- "02_outputs/model_registry.csv"
 

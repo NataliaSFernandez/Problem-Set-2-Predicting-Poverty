@@ -27,7 +27,7 @@ library(caret)
 library(pROC)
 library(fs)
 
-dir_outputs_nb  <- "02_outputs/models/NB"
+dir_outputs_nb  <- "02_outputs/models/NB/Baseline"
 dir_submissions <- "03_submissions"
 registry_path   <- "02_outputs/model_registry.csv"
 
