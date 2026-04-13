@@ -61,7 +61,7 @@ CP       <- 0.001
 MAXDEPTH <- 20
 THRESHOLD <- 0.5   # default — sin optimización CV-OOF
 
-dir_model <- "02_outputs/models/CARTs/CART_001/CART_baseline"
+dir_model <- "02_outputs/models/CARTs/Baseline/CART_baseline"
 dir_subs  <- "03_submissions"
 reg_path  <- "02_outputs/model_registry.csv"
 
