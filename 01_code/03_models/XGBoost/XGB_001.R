@@ -719,7 +719,10 @@ probs_test <- predict(xgb_cv,
 pred_test  <- as.integer(probs_test >= best_th)
 
 submission <- tibble(id = ids, pobre = pred_test)
-sub_path   <- file.path(dir_subs, paste0("submission_", MODEL_ID, ".csv"))
+sub_name   <- sprintf("XGB_nrounds%d_depth%d_eta%03.0f_th%03.0f.csv",
+                      best_nrounds, best_max_depth,
+                      best_eta * 100, best_th * 100)
+sub_path   <- file.path(dir_subs, sub_name)
 write_csv(submission, sub_path)
 
 message("  Guardado: ", sub_path)

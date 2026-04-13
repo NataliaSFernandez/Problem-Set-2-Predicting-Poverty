@@ -872,7 +872,7 @@ run_lpm <- function(model_id, notas, vars_excluir) {
 
   submission_file <- file.path(
     dir_submissions,
-    paste0("submission_", model_id, ".csv")
+    sprintf("LPM_%dfeat_th%03.0f.csv", ncol(X_train), THRESHOLD * 100)
   )
   write_csv(submission, submission_file)
   message("Submission guardada: ", submission_file)

@@ -657,7 +657,9 @@ probs_test <- predict(rf_final, data = X_test)$predictions[, "Yes"]
 pred_test  <- as.integer(probs_test >= best_th)   # threshold óptimo OOF
 
 submission <- tibble(id = ids, pobre = pred_test)
-sub_path   <- file.path(dir_subs, paste0("submission_", MODEL_ID, ".csv"))
+sub_name   <- sprintf("RF_mtry%d_minnodesize%d_ntrees150_th%03.0f.csv",
+                      best_mtry, best_min_node, best_th * 100)
+sub_path   <- file.path(dir_subs, sub_name)
 write_csv(submission, sub_path)
 
 message("  Guardado: ", sub_path)
