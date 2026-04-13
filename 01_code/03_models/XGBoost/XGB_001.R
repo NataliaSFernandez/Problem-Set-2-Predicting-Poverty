@@ -48,8 +48,8 @@
 #   gamma            : pérdida mínima necesaria para realizar una división
 #                      en un nodo. Actúa como regularización de la estructura
 #                      del árbol.
-#                      Fijo en 0 (sin penalización por split). El notebook
-#                      usa c(0, 1); se fija en el valor conservador para
+#                      Fijo en 0.5 (penalización moderada por split). El
+#                      notebook usa c(0, 1); se fija en el punto medio para
 #                      reducir la grilla.
 #
 #   min_child_weight : mínimo de observaciones en un nodo hoja.
@@ -112,6 +112,34 @@
 #   [ANTES de correr]  Verificar que AUTOR esté correcto.
 #   [DESPUÉS de correr] Subir el CSV a Kaggle y anotar el public F1
 #                       en model_registry.csv (columna kaggle_public_F1).
+#
+# COMPATIBILIDAD — xgboost vs. caret:
+#   caret::train() con method = "xgbTree" NO es compatible con xgboost >= 3.0.0.
+#   La causa: xgboost 3.x cambió su objeto modelo interno a clases ALTREP
+#   (Alternative Representation de R). caret intenta asignar
+#   modelFit$xNames <- colnames(x) después del ajuste, operación que las
+#   clases ALTREP no soportan ("ALTLIST classes must provide a Set_elt
+#   method [class: XGBAltrepPointerClass, pkg: xgboost]").
+#   caret está en modo mantenimiento y no tiene previsto corregirlo
+#   (ver issue topepo/caret#1412).
+#
+#   Intentos fallidos de downgrade a xgboost 1.7.11.1:
+#     - xgboost no publicó rama 2.x en CRAN (el salto fue 1.7.x → 3.x).
+#     - xgboost 1.7.x no tiene binario prebuilt para R 4.5/arm64; requiere
+#       compilación desde fuente.
+#     - La compilación falla en macOS con Xcode 26 beta (SDK MacOSX26.x):
+#       el SDK elige headers de distinta ubicación y clang++ no encuentra
+#       <vector> aunque los headers existan.
+#     Conclusión: el downgrade no es viable en este entorno.
+#
+#   Solución definitiva (Secciones 5 y 7):
+#     Se elimina caret del flujo de entrenamiento. La Sección 7 implementa
+#     un CV-5 manual usando xgboost::xgb.train() directamente, construyendo
+#     al final un objeto xgb_cv con la misma estructura que habría dejado
+#     caret (campos results, bestTune, pred, finalModel) para que las
+#     secciones 8–12 no requieran cambios. La importancia de variables
+#     (Sección 9) y las predicciones sobre test (Sección 11) usan también
+#     la API nativa. caret sigue cargado sólo para caret::createFolds().
 #==============================================================================
 # nolint start
 
@@ -125,8 +153,8 @@
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
   tidyverse,  # dplyr (manipulación), ggplot2 (gráficos), purrr (map_dfr), tibble
-  caret,      # train(), trainControl(), confusionMatrix(), varImp()
-  xgboost,    # XGBoost; usado internamente por caret (method = "xgbTree")
+  caret,      # createFolds() para el CV manual de la Sección 7
+  xgboost,    # xgb.train() / xgb.DMatrix() — API nativa (compatible con v3.x)
   pROC,       # roc(), auc() — curva ROC y AUC
   fs          # dir_create() — crear carpetas de forma multiplataforma
 )
@@ -138,7 +166,7 @@ pacman::p_load(
 # salida. Crear los directorios aquí evita errores al guardar archivos más tarde.
 #
 # Produce: variables AUTOR, MODEL_ID, rutas y carpetas de output creadas.
-AUTOR    <- "Jonathan Melo"
+AUTOR    <- "Jonathan"
 MODEL_ID <- "XGB_001"
 
 # Semilla global — todos los scripts del equipo usan 42 para comparabilidad
@@ -192,10 +220,10 @@ message("Balance: ", round(mean(train$pobre) * 100, 1), "% pobres  /  ",
 #      Las variables binarias codificadas como "0"/"1" en character pasan
 #      directamente a 0 y 1 numérico.
 #   5. Convertir factores a entero (su código subyacente).
-#   6. Imputar NAs con la mediana de cada columna. Aunque xgboost puede
-#      manejar NAs internamente, caret los rechaza antes de llamar a xgb.
 #
-# Produce: X_train y X_test completamente numéricos y sin NAs, y_train factor.
+# Los datos ya vienen limpios del script de preprocesamiento: no hay NAs.
+#
+# Produce: X_train y X_test completamente numéricos, y_train factor.
 message("\n== Preprocesando variables ==")
 
 preparar_X_xgb <- function(df) {
@@ -204,9 +232,7 @@ preparar_X_xgb <- function(df) {
     mutate(zona = as.numeric(zona)) |>                 # "1"/"2" (chr) → numérico
     select(-any_of(c("ciudad", "dpto"))) |>            # alta cardinalidad → excluir
     mutate(across(where(is.character), as.numeric)) |> # "0"/"1" chr → numérico
-    mutate(across(where(is.factor),   as.integer)) |>  # factor → código entero
-    mutate(across(everything(),                        # imputar NAs con mediana
-                  ~ ifelse(is.na(.), median(., na.rm = TRUE), .)))
+    mutate(across(where(is.factor),   as.integer))     # factor → código entero
 }
 
 X_train <- preparar_X_xgb(train)
@@ -230,7 +256,6 @@ niveles <- c("No", "Yes")
 y_train <- factor(ifelse(train$pobre == 1, "Yes", "No"), levels = niveles)
 
 message("  Predictores: ", ncol(X_train))
-message("  NAs restantes en X_train: ", sum(is.na(X_train)))
 
 # =============================================================================
 # SECCIÓN 4: FUNCIONES AUXILIARES
@@ -255,24 +280,13 @@ prf_summary <- function(data, lev = NULL, model = NULL) {
 }
 
 # =============================================================================
-# SECCIÓN 5: trainControl
+# SECCIÓN 5: trainControl (no aplica — CV implementado con API nativa)
 # =============================================================================
-# Define la estrategia de validación: CV de 5 folds, optimizando F1.
-# classProbs = TRUE es necesario para que, después del CV, podamos llamar
-# predict(xgb_cv, newdata = X_train_mat, type = "prob") y obtener
-# probabilidades continuas P(pobre=1|X) para las curvas de diagnóstico.
-# savePredictions = "final" guarda las predicciones OOF de la combinación
-# óptima de hiperparámetros.
-#
-# Produce: objeto ctrl_cv pasado a train().
-ctrl_cv <- trainControl(
-  method          = "cv",
-  number          = 5,
-  summaryFunction = prf_summary,   # retorna F1, Precision, Recall por fold
-  classProbs      = TRUE,          # necesario para predict(..., type = "prob")
-  verboseIter     = TRUE,          # imprime el progreso de cada fold en consola
-  savePredictions = "final"
-)
+# caret::train() + trainControl() no se usan porque caret es incompatible con
+# xgboost >= 3.x (ver sección COMPATIBILIDAD en el encabezado). El CV se
+# implementa directamente en la Sección 7 con xgboost::xgb.train() y
+# caret::createFolds(). La lógica equivalente (5 folds, F1 como métrica,
+# predicciones OOF) se reproduce manualmente.
 
 # =============================================================================
 # SECCIÓN 6: GRILLA DE HIPERPARÁMETROS
@@ -289,7 +303,7 @@ ctrl_cv <- trainControl(
 #
 # Los 4 hiperparámetros restantes se fijan en valores razonables para el
 # tamaño del dataset (tomados del rango del notebook):
-#   gamma            = 0    (sin penalización por split; valor conservador)
+#   gamma            = 0.5  (penalización moderada por split; punto medio)
 #   min_child_weight = 10   (hoja mínima de 10 obs; extremo bajo del notebook)
 #   colsample_bytree = 0.66 (2/3 de columnas por árbol; extremo alto del notebook)
 #   subsample        = 0.80 (80% de filas por árbol; extremo alto del notebook)
@@ -305,7 +319,7 @@ tune_grid <- expand.grid(
   max_depth        = c(3, 6),       # profundidad del árbol
   eta              = c(0.05, 0.10), # learning rate; se eleva el mínimo (0.01 → 0.05)
                                     # para que nrounds=100 sea suficiente para converger
-  gamma            = 0,             # sin penalización por split (fijo)
+  gamma            = 0.5,           # penalización moderada por split (fijo)
   min_child_weight = 10,            # hoja mínima de 10 observaciones (fijo)
   colsample_bytree = 0.66,          # 2/3 de columnas por árbol (fijo)
   subsample        = 0.80           # 80% de filas por árbol (fijo)
@@ -331,22 +345,30 @@ message("  Núcleos usados por xgboost (nthread): ", N_THREADS)
 message("  Tiempo estimado: 30-50 min con 164k observaciones")
 
 # =============================================================================
-# SECCIÓN 7: ENTRENAMIENTO CON CV
+# SECCIÓN 7: ENTRENAMIENTO CON CV (API nativa xgboost)
 # =============================================================================
-# caret::train() con method = "xgbTree":
-#   1. Divide train en 5 folds.
-#   2. Para cada una de las 8 combinaciones de hiperparámetros:
-#      - Entrena XGBoost en 4 folds.
-#      - Evalúa F1 en el fold restante.
-#      - Promedia F1 sobre los 5 folds.
-#   3. Selecciona la combinación con mayor F1 promedio.
-#   4. Re-entrena automáticamente el modelo final con esa combinación
-#      sobre TODOS los datos de train.
+# Implementación manual del mismo CV-5 que habría hecho caret::train():
+#   1. caret::createFolds() genera los índices de los 5 folds.
+#   2. Para cada combinación de la grilla × cada fold:
+#      - xgb.DMatrix() empaqueta el subconjunto de entrenamiento y validación.
+#      - xgb.train() ajusta el modelo sobre los 4 folds de entrenamiento.
+#      - predict() devuelve P(pobre=1|X) para el fold de validación.
+#      - Se calculan F1, Precision y Recall con threshold = 0.5.
+#      - Se guardan las predicciones OOF (out-of-fold) para la búsqueda de
+#        threshold óptimo en la Sección 9.
+#   3. Se promedia F1 sobre los 5 folds por combinación.
+#   4. Se selecciona la combinación con mayor F1 promedio.
+#   5. Se re-entrena el modelo final sobre TODOS los datos de train con
+#      la combinación óptima.
 #
-# nthread se pasa como argumento adicional a xgboost para paralelizar
-# la construcción de cada árbol (nivel de CPU, no de folds).
+# Al finalizar se construye la lista xgb_cv con los campos que esperan
+# las secciones 8–12: results, bestTune, pred (OOF del mejor combo),
+# finalModel. Esto permite reutilizar todo el código downstream sin cambios.
 #
-# Produce: objeto xgb_cv con resultados de CV, bestTune y finalModel.
+# nthread paraleliza la construcción de cada árbol (OpenMP, no los folds).
+#
+# Produce: lista xgb_cv con resultados de CV, bestTune, OOF preds y
+#          finalModel (objeto xgboost::xgb.Booster).
 message("\n========================================")
 message("Entrenando XGBoost con CV-5")
 message("========================================")
@@ -354,15 +376,128 @@ message("========================================")
 set.seed(42)
 t0 <- Sys.time()
 
-xgb_cv <- train(
-  x         = X_train_mat,   # xgboost requiere matrix, no data frame
-  y         = y_train,
-  method    = "xgbTree",     # usa el paquete xgboost internamente
-  trControl = ctrl_cv,
-  tuneGrid  = tune_grid,
-  metric    = "F1",          # caret selecciona el modelo que maximiza F1
-  verbose   = FALSE,         # suprime la salida de xgboost por iteración
-  nthread   = N_THREADS      # paralelismo interno de xgboost (OpenMP)
+# Partición reproducible en 5 folds estratificados por y_train
+folds        <- caret::createFolds(y_train, k = 5, list = TRUE,
+                                   returnTrain = TRUE)
+n_combos     <- nrow(tune_grid)
+cv_rows      <- vector("list", n_combos)   # métricas promedio por combo
+oof_by_combo <- vector("list", n_combos)   # predicciones OOF por combo
+
+for (i in seq_len(n_combos)) {
+  p        <- tune_grid[i, ]
+  fold_met <- matrix(NA_real_, nrow = 5, ncol = 3,
+                     dimnames = list(NULL, c("F1", "Precision", "Recall")))
+  fold_oof <- vector("list", 5)
+
+  for (f in seq_len(5)) {
+    tr_idx  <- folds[[f]]
+    val_idx <- setdiff(seq_len(nrow(X_train_mat)), tr_idx)
+
+    dtrain_f <- xgboost::xgb.DMatrix(
+      X_train_mat[tr_idx,  ],
+      label = as.integer(y_train[tr_idx]  == "Yes"))
+    dval_f <- xgboost::xgb.DMatrix(
+      X_train_mat[val_idx, ],
+      label = as.integer(y_train[val_idx] == "Yes"))
+
+    m_f <- xgboost::xgb.train(
+      params = list(
+        objective        = "binary:logistic",
+        eval_metric      = "logloss",
+        max_depth        = p$max_depth,
+        eta              = p$eta,
+        gamma            = p$gamma,
+        min_child_weight = p$min_child_weight,
+        colsample_bytree = p$colsample_bytree,
+        subsample        = p$subsample,
+        nthread          = N_THREADS
+      ),
+      data    = dtrain_f,
+      nrounds = p$nrounds,
+      verbose = 0
+    )
+
+    message(sprintf(
+      "+ Fold%d: eta=%.2f, max_depth=%d, gamma=%.1f, colsample_bytree=%.2f, min_child_weight=%d, subsample=%.1f, nrounds=%d",
+      f, p$eta, p$max_depth, p$gamma, p$colsample_bytree,
+      p$min_child_weight, p$subsample, p$nrounds))
+
+    prob_val <- predict(m_f, dval_f)
+    pred_val <- factor(ifelse(prob_val >= 0.5, "Yes", "No"), levels = niveles)
+    obs_val  <- y_train[val_idx]
+
+    TP <- sum(pred_val == "Yes" & obs_val == "Yes")
+    FP <- sum(pred_val == "Yes" & obs_val != "Yes")
+    FN <- sum(pred_val == "No"  & obs_val == "Yes")
+    fold_met[f, "F1"]        <- if ((2*TP+FP+FN) == 0) NA_real_ else 2*TP/(2*TP+FP+FN)
+    fold_met[f, "Precision"] <- if ((TP+FP) == 0)       NA_real_ else TP/(TP+FP)
+    fold_met[f, "Recall"]    <- if ((TP+FN) == 0)       NA_real_ else TP/(TP+FN)
+
+    fold_oof[[f]] <- tibble(
+      rowIndex         = val_idx,
+      Yes              = prob_val,
+      No               = 1 - prob_val,
+      obs              = obs_val,
+      nrounds          = p$nrounds,
+      max_depth        = p$max_depth,
+      eta              = p$eta,
+      gamma            = p$gamma,
+      min_child_weight = p$min_child_weight,
+      colsample_bytree = p$colsample_bytree,
+      subsample        = p$subsample
+    )
+  }
+
+  avg_met    <- colMeans(fold_met, na.rm = TRUE)
+  cv_rows[[i]] <- tibble(
+    nrounds          = p$nrounds,
+    max_depth        = p$max_depth,
+    eta              = p$eta,
+    gamma            = p$gamma,
+    min_child_weight = p$min_child_weight,
+    colsample_bytree = p$colsample_bytree,
+    subsample        = p$subsample,
+    F1               = avg_met["F1"],
+    Precision        = avg_met["Precision"],
+    Recall           = avg_met["Recall"]
+  )
+  oof_by_combo[[i]] <- bind_rows(fold_oof)
+}
+
+# Mejor combinación según F1 promedio CV-5
+cv_results_df <- bind_rows(cv_rows)
+best_idx      <- which.max(cv_results_df$F1)
+best_params   <- tune_grid[best_idx, ]
+
+# Modelo final: re-entrenamiento sobre TODOS los datos de train
+dtrain_full <- xgboost::xgb.DMatrix(
+  X_train_mat, label = as.integer(y_train == "Yes"))
+
+set.seed(42)
+final_model <- xgboost::xgb.train(
+  params = list(
+    objective        = "binary:logistic",
+    eval_metric      = "logloss",
+    max_depth        = best_params$max_depth,
+    eta              = best_params$eta,
+    gamma            = best_params$gamma,
+    min_child_weight = best_params$min_child_weight,
+    colsample_bytree = best_params$colsample_bytree,
+    subsample        = best_params$subsample,
+    nthread          = N_THREADS
+  ),
+  data    = dtrain_full,
+  nrounds = best_params$nrounds,
+  verbose = 0
+)
+
+# Estructura compatible con secciones 8–12
+# (mismos campos que habría dejado caret::train())
+xgb_cv <- list(
+  results    = cv_results_df,          # métricas CV por combinación
+  bestTune   = best_params,            # mejor combo (data.frame 1 fila)
+  pred       = oof_by_combo[[best_idx]], # predicciones OOF del mejor combo
+  finalModel = final_model             # modelo entrenado en todo train
 )
 
 t1 <- Sys.time()
@@ -430,13 +565,9 @@ message("  Recall CV-5:      ", round(best_recall_cv, 4))
 #      OOF = out-of-fold: cada observación fue predicha por el modelo que NO
 #      la vio en ese fold → estimación honesta fuera de muestra, análoga a
 #      las OOF del CV manual del LPM.
-#   2. Obtener probabilidades del modelo final sobre train (en muestra).
-#   3. Aplicar el threshold OOF al modelo final para métricas en muestra.
-#   4. Calcular importancias de variables.
+#   2. Calcular importancias de variables.
 #
-# Produce: best_th (threshold óptimo OOF), probs_train (probabilidades en
-#          muestra), pred_train (clase con best_th), cm_final, métricas
-#          train_*, varimp_xgb.
+# Produce: best_th (threshold óptimo OOF), métricas OOF, varimp_xgb.
 message("\n========================================")
 message("Evaluando modelo final y optimizando threshold (OOF)")
 message("========================================")
@@ -490,36 +621,17 @@ message("  F1 OOF:        ", round(best_oof_f1, 4))
 message("  Precision OOF: ", round(best_oof_pr, 4))
 message("  Recall OOF:    ", round(best_oof_rc, 4))
 
-# ---------------------------------------------------------------------------
-# 9.2  PROBABILIDADES DEL MODELO FINAL (en muestra — para gráficos)
-# ---------------------------------------------------------------------------
-# predict con type = "prob" disponible porque classProbs = TRUE en trainControl
-probs_train <- predict(xgb_cv,
-                       newdata = X_train_mat,
-                       type    = "prob")[, "Yes"]
-
-# Clase predicha sobre train con el threshold óptimo OOF
-pred_train <- factor(
-  ifelse(probs_train >= best_th, "Yes", "No"),
-  levels = niveles
-)
-
-cm_final        <- confusionMatrix(pred_train, y_train, positive = "Yes")
-train_F1        <- cm_final$byClass["F1"]
-train_Precision <- cm_final$byClass["Precision"]
-train_Recall    <- cm_final$byClass["Recall"]
-
-cat("\n-- Métricas modelo final (train, en muestra, threshold =", best_th, ") --\n")
-cat("  F1:        ", round(train_F1,        4), "\n")
-cat("  Precision: ", round(train_Precision, 4), "\n")
-cat("  Recall:    ", round(train_Recall,    4), "\n")
-# NOTA: estas métricas son en muestra (optimistas). Las referencias confiables
-# son cv_F1 (Sección 8) y las métricas OOF del threshold (arriba).
-
 # Importancia de variables por Gain (reducción de la función de pérdida
 # logística atribuida a cada predictor al usarse como criterio de split).
-# varImp() normaliza a [0, 100] para comparabilidad.
-varimp_xgb <- varImp(xgb_cv, scale = TRUE)
+# xgb.importance() devuelve un data.table con columnas Feature y Gain.
+# Se convierte a data.frame con rownames = Feature y columna Overall
+# normalizada a [0, 100], replicando la estructura que devuelve varImp().
+imp_raw    <- xgboost::xgb.importance(model = final_model)
+imp_df     <- data.frame(
+  Overall   = imp_raw$Gain / max(imp_raw$Gain) * 100,
+  row.names = imp_raw$Feature
+)
+varimp_xgb <- list(importance = imp_df)
 
 # =============================================================================
 # SECCIÓN 10: GRÁFICOS DE DIAGNÓSTICO
@@ -713,9 +825,8 @@ message("\n========================================")
 message("Generando submission para Kaggle")
 message("========================================")
 
-probs_test <- predict(xgb_cv,
-                      newdata = X_test_mat,
-                      type    = "prob")[, "Yes"]
+dtest      <- xgboost::xgb.DMatrix(X_test_mat)
+probs_test <- predict(final_model, dtest)   # devuelve P(pobre=1|X) directamente
 pred_test  <- as.integer(probs_test >= best_th)
 
 submission <- tibble(id = ids, pobre = pred_test)
@@ -775,10 +886,7 @@ nueva_fila <- tibble(
   gamma              = best_gamma,
   min_child_weight   = best_min_child_weight,
   colsample_bytree   = best_colsample,
-  subsample          = best_subsample,
-  train_F1           = round(train_F1,        4),
-  train_Precision    = round(train_Precision, 4),
-  train_Recall       = round(train_Recall,    4)
+  subsample          = best_subsample
 )
 
 # Si el registry ya existe: quitar la fila anterior de este MODEL_ID (si la hay)

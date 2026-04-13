@@ -5551,6 +5551,11 @@
       "Maintainer": "Yihui Xie <xie@yihui.name>",
       "Repository": "CRAN"
     },
+    "xgboost": {
+      "Package": "xgboost",
+      "Version": "3.2.1.1",
+      "Source": "Repository"
+    },
     "xml2": {
       "Package": "xml2",
       "Version": "1.5.2",
