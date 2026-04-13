@@ -58,5 +58,5 @@ kaggle.json
 00_data/processed/*.csv
 
 #--Outputs----------
-02_outputs/
+#02_outputs/
 *.rds

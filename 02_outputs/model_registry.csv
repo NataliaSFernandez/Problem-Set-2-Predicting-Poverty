@@ -10,3 +10,6 @@ CART_cp0001_thopt,2026-04-13,Natalia,CART,108,none,5,0.6758,0.6443,0.7105,0.8971
 NB_RF_top20,2026-04-13,Natalia,NaiveBayes,20,none,5,0.6186,0.5133,0.7781,0.8759,NA,0.95,NB con top-20 vars de RF_001. usekernel=TRUE. Folds estratificados. Threshold CV-5 OOF.,NA,NA,0.6191,0.5143,0.7776,NA
 NB_RF_top40,2026-04-13,Natalia,NaiveBayes,40,none,5,0.5828,0.4435,0.8498,0.8774,NA,0.95,NB con top-40 vars de RF_001. usekernel=TRUE. Folds estratificados. Threshold CV-5 OOF.,NA,NA,0.5825,0.4432,0.8494,NA
 NB_RF_top60,2026-04-13,Natalia,NaiveBayes,60,none,5,0.6045,0.4732,0.8365,0.8813,NA,0.95,NB con top-60 vars de RF_001. usekernel=TRUE. Folds estratificados. Threshold CV-5 OOF.,NA,NA,0.6046,0.4734,0.8365,NA
+CART_RF_top20,2026-04-13,Natalia,CART,20,none,5,0.6488,0.586,0.7268,0.8798,NA,0.29,CART top-20 vars RF_001. CV anidado 5x3. cp elegido por CV-3 interno=5e-04. Threshold CV-5 OOF=0.29.,5e-4,20,0.6523,0.5773,0.7499,NA
+CART_RF_top40,2026-04-13,Natalia,CART,40,none,5,0.674,0.6375,0.715,0.896,NA,0.25,CART top-40 vars RF_001. CV anidado 5x3. cp elegido por CV-3 interno=1e-04. Threshold CV-5 OOF=0.25.,1e-4,20,0.7074,0.658,0.7648,NA
+CART_RF_top60,2026-04-13,Natalia,CART,60,none,5,0.6769,0.6442,0.7132,0.8971,NA,0.25,CART top-60 vars RF_001. CV anidado 5x3. cp elegido por CV-3 interno=1e-04. Threshold CV-5 OOF=0.25.,1e-4,20,0.7118,0.6652,0.7654,NA
