@@ -1,0 +1,63 @@
+=== ELASTIC NET --  EN_RF_top20  ===
+
+Predictores: 20 
+Variables usadas: horas_prom, arriendo_estimado, tasa_empleo_total, subsidiado_x_menores, indice_formalidad, prop_contributivo, menores_por_ocupado, edad_prom, antiguedad_prom, educ_x_formal, educ_x_ocup, menores_x_desocup, prop_cotiza_pension, prop_microempresa, prop_subsidiado, edad_jefe, edad_jefe_sq, educ_prom_sq, prop_menores, nivel_educ_prom 
+
+alpha: 1 
+lambda: 1e-04 
+Threshold optimo: 0.32 
+F1 OOF: 0.6567 
+Precision OOF: 0.5895 
+Recall OOF: 0.7413 
+AUC-ROC: 0.9019 
+
+-- Confusion Matrix (OOF) --
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     No    Yes
+       No  114887   8544
+       Yes  17049  24480
+                                          
+               Accuracy : 0.8449          
+                 95% CI : (0.8431, 0.8466)
+    No Information Rate : 0.7998          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.5582          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.7413          
+            Specificity : 0.8708          
+         Pos Pred Value : 0.5895          
+         Neg Pred Value : 0.9308          
+             Prevalence : 0.2002          
+         Detection Rate : 0.1484          
+   Detection Prevalence : 0.2518          
+      Balanced Accuracy : 0.8060          
+                                          
+       'Positive' Class : Yes             
+                                          
+
+-- Coeficientes no cero --
+               variable  coeficiente
+1     arriendo_estimado -5.054128418
+2            horas_prom -0.876661810
+3     prop_contributivo -0.696579896
+4             edad_prom -0.620374732
+5   menores_por_ocupado  0.606001829
+6     prop_microempresa  0.555984715
+7          educ_prom_sq -0.408396783
+8   prop_cotiza_pension -0.355805972
+9          prop_menores -0.254907465
+10        educ_x_formal -0.216435444
+11    indice_formalidad -0.187170989
+12 subsidiado_x_menores  0.174157418
+13            edad_jefe  0.128155835
+14      nivel_educ_prom -0.095678540
+15      prop_subsidiado -0.089565638
+16          educ_x_ocup  0.054279215
+17      antiguedad_prom  0.033191480
+18    tasa_empleo_total -0.003547649
+19         edad_jefe_sq -0.001204746

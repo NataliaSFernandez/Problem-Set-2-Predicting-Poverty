@@ -1,0 +1,81 @@
+=== ELASTIC NET --  EN_RF_top40  ===
+
+Predictores: 40 
+Variables usadas: horas_prom, arriendo_estimado, tasa_empleo_total, subsidiado_x_menores, indice_formalidad, prop_contributivo, menores_por_ocupado, edad_prom, antiguedad_prom, educ_x_formal, educ_x_ocup, menores_x_desocup, prop_cotiza_pension, prop_microempresa, prop_subsidiado, edad_jefe, edad_jefe_sq, educ_prom_sq, prop_menores, nivel_educ_prom, hacinamiento_sq, hacinamiento, cuartos_pc, valor_alojamiento, prop_asalariado, tasa_ocup_sq, tasa_ocupacion, hacinamiento_dorm, formal_estricto, tipo_tenencia, prop_prima_serv, prop_cta_propia, num_personas_ug, n_inactivos, educ_x_rural, prop_gran_empresa, alguno_transf_nac, dep_empleo_formal, nivel_educ_max, prop_informal 
+
+alpha: 1 
+lambda: 1e-04 
+Threshold optimo: 0.35 
+F1 OOF: 0.6781 
+Precision OOF: 0.6282 
+Recall OOF: 0.7368 
+AUC-ROC: 0.9134 
+
+-- Confusion Matrix (OOF) --
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     No    Yes
+       No  117534   8693
+       Yes  14402  24331
+                                          
+               Accuracy : 0.86            
+                 95% CI : (0.8583, 0.8617)
+    No Information Rate : 0.7998          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.5894          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.7368          
+            Specificity : 0.8908          
+         Pos Pred Value : 0.6282          
+         Neg Pred Value : 0.9311          
+             Prevalence : 0.2002          
+         Detection Rate : 0.1475          
+   Detection Prevalence : 0.2348          
+      Balanced Accuracy : 0.8138          
+                                          
+       'Positive' Class : Yes             
+                                          
+
+-- Coeficientes no cero --
+               variable  coeficiente
+1     arriendo_estimado -4.946940762
+2       formal_estricto -1.315358573
+3            horas_prom -1.012106836
+4         prop_informal  0.789096189
+5     prop_contributivo -0.666826717
+6     tasa_empleo_total -0.661930154
+7       prop_asalariado  0.505054902
+8   menores_por_ocupado  0.454780134
+9     indice_formalidad -0.395519629
+10         educ_prom_sq -0.308598556
+11    prop_gran_empresa -0.297976721
+12    prop_microempresa  0.297438284
+13      prop_cta_propia -0.292714548
+14           cuartos_pc -0.270451815
+15         hacinamiento  0.266883461
+16            edad_prom -0.259153242
+17         educ_x_rural -0.255214453
+18      prop_prima_serv  0.220369658
+19    valor_alojamiento -0.219916934
+20        tipo_tenencia  0.192542077
+21    dep_empleo_formal  0.175587617
+22      num_personas_ug  0.171502215
+23  prop_cotiza_pension  0.159938824
+24          educ_x_ocup -0.141321418
+25          n_inactivos -0.130642714
+26      hacinamiento_sq -0.118164463
+27    alguno_transf_nac -0.117689700
+28         tasa_ocup_sq  0.082735119
+29       nivel_educ_max -0.079483122
+30         prop_menores -0.075039256
+31       tasa_ocupacion  0.071129060
+32    hacinamiento_dorm  0.065188687
+33    menores_x_desocup  0.037433760
+34      prop_subsidiado  0.033945305
+35      antiguedad_prom  0.018012774
+36 subsidiado_x_menores  0.005657357
+37            edad_jefe  0.004883860

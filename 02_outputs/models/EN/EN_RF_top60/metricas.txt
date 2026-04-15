@@ -1,0 +1,99 @@
+=== ELASTIC NET --  EN_RF_top60  ===
+
+Predictores: 60 
+Variables usadas: horas_prom, arriendo_estimado, tasa_empleo_total, subsidiado_x_menores, indice_formalidad, prop_contributivo, menores_por_ocupado, edad_prom, antiguedad_prom, educ_x_formal, educ_x_ocup, menores_x_desocup, prop_cotiza_pension, prop_microempresa, prop_subsidiado, edad_jefe, edad_jefe_sq, educ_prom_sq, prop_menores, nivel_educ_prom, hacinamiento_sq, hacinamiento, cuartos_pc, valor_alojamiento, prop_asalariado, tasa_ocup_sq, tasa_ocupacion, hacinamiento_dorm, formal_estricto, tipo_tenencia, prop_prima_serv, prop_cta_propia, num_personas_ug, n_inactivos, educ_x_rural, prop_gran_empresa, alguno_transf_nac, dep_empleo_formal, nivel_educ_max, prop_informal, zona, prop_mujeres, prop_sub_transp, n_fuentes_no_lab, n_privaciones, num_personas, ingresos_activos, ratio_depend, log_num_personas, vivienda_propia_pag, ratio_depend_sq, educ_jefe_sq, depend_x_informal, tasa_desempleo, n_menores_18, nivel_educ_jefe, alguno_arriendos, alguno_subsidio, log_n_menores, num_cuartos 
+
+alpha: 1 
+lambda: 1e-04 
+Threshold optimo: 0.36 
+F1 OOF: 0.6832 
+Precision OOF: 0.6401 
+Recall OOF: 0.7326 
+AUC-ROC: 0.9168 
+
+-- Confusion Matrix (OOF) --
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     No    Yes
+       No  118335   8832
+       Yes  13601  24192
+                                          
+               Accuracy : 0.864           
+                 95% CI : (0.8623, 0.8657)
+    No Information Rate : 0.7998          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.5971          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.7326          
+            Specificity : 0.8969          
+         Pos Pred Value : 0.6401          
+         Neg Pred Value : 0.9305          
+             Prevalence : 0.2002          
+         Detection Rate : 0.1467          
+   Detection Prevalence : 0.2291          
+      Balanced Accuracy : 0.8147          
+                                          
+       'Positive' Class : Yes             
+                                          
+
+-- Coeficientes no cero --
+               variable   coeficiente
+1     arriendo_estimado -4.1242906640
+2       formal_estricto -1.0868668899
+3            horas_prom -1.0411455846
+4         prop_informal  0.8187893759
+5     tasa_empleo_total -0.6711006041
+6     prop_contributivo -0.6548745588
+7   menores_por_ocupado  0.4322285378
+8       prop_cta_propia -0.3545419386
+9      n_fuentes_no_lab -0.3308746173
+10      prop_asalariado  0.3167322342
+11     log_num_personas  0.3163279456
+12    valor_alojamiento -0.3139372708
+13     alguno_arriendos -0.3046675245
+14    prop_gran_empresa -0.2941933290
+15    prop_microempresa  0.2895620482
+16                 zona -0.2662505402
+17      prop_sub_transp -0.2552089371
+18      nivel_educ_prom -0.2491495176
+19            edad_prom -0.2402195997
+20         educ_jefe_sq -0.2332223592
+21      alguno_subsidio  0.2272936720
+22  vivienda_propia_pag -0.1973963671
+23    dep_empleo_formal  0.1832425613
+24         hacinamiento  0.1603703961
+25        log_n_menores -0.1535770945
+26           cuartos_pc -0.1467311375
+27          num_cuartos -0.1305684573
+28      prop_prima_serv  0.1302280221
+29       tasa_ocupacion  0.1172345643
+30         tasa_ocup_sq  0.1046906906
+31    menores_x_desocup  0.0953414326
+32       tasa_desempleo  0.0790776185
+33       nivel_educ_max -0.0765165601
+34      nivel_educ_jefe  0.0666318472
+35         prop_mujeres  0.0589981181
+36          educ_x_ocup -0.0587338047
+37      hacinamiento_sq -0.0519080334
+38        n_privaciones -0.0503178304
+39    alguno_transf_nac  0.0480912544
+40          n_inactivos -0.0455221260
+41    hacinamiento_dorm  0.0433446430
+42      ratio_depend_sq  0.0374653035
+43      antiguedad_prom  0.0367230364
+44      num_personas_ug  0.0315914290
+45        tipo_tenencia  0.0235470734
+46    depend_x_informal  0.0220250450
+47         educ_prom_sq -0.0153631909
+48         educ_x_rural -0.0153472087
+49         edad_jefe_sq -0.0152175484
+50      prop_subsidiado  0.0127401683
+51     ingresos_activos -0.0076482072
+52            edad_jefe  0.0016335337
+53         prop_menores  0.0009305040
+54 subsidiado_x_menores  0.0009006567
+55        educ_x_formal  0.0003053175
