@@ -3,21 +3,15 @@
 # PROBLEM SET 2: PREDICTING POVERTY
 # Script: 03_modelos/naive_bayes.R
 #==============================================================================
-# ALGORITMO : Naive Bayes (e1071)
+# ALGORITMO : Naive Bayes (e1071) — Baseline
 # DOS ESPECIFICACIONES:
 #   NB_001A — Sin variables compuestas (misma lógica que LPM_002A)
 #   NB_001B — Con variables compuestas (misma lógica que LPM_002B)
 #
-# OPTIMIZACIONES ACTIVAS:
-#   - Threshold: CV-5 OOF (barrido 0.05 a 0.95)   ← YA ESTÁ
-#   - Hiperparámetros: usekernel=TRUE               ← YA ESTÁ (máximo impacto)
-#     laplace y adjust tienen impacto mínimo con datos grandes → no se tunean
-#
-# COLUMNAS DE REGISTRY (mismas que CART para uniformidad del equipo):
-#   model_id, fecha, autor, algoritmo, n_features, imbalance_strategy,
-#   cv_folds, cv_F1, cv_Precision, cv_Recall, auc_roc, kaggle_public_F1,
-#   threshold, notas, cp, maxdepth, train_F1, train_Precision, train_Recall
-#   (cp y maxdepth son NA para NB — no aplican a este algoritmo)
+# OPTIMIZACIONES:
+#   - Folds estratificados: caret::createFolds()
+#   - Threshold: CV-5 OOF (barrido 0.05 a 0.95)
+#   - usekernel = TRUE (distribución no paramétrica)
 #==============================================================================
 
 # -- 0. Paquetes -------------------------------------------------------------
@@ -35,8 +29,6 @@ fs::dir_create(dir_outputs_nb,  recurse = TRUE)
 fs::dir_create(dir_submissions, recurse = TRUE)
 fs::dir_create("02_outputs",    recurse = TRUE)
 
-set.seed(42)
-
 # -- 1. Carga de datos -------------------------------------------------------
 message("== Cargando datos ==")
 
@@ -48,22 +40,35 @@ y_train <- train$pobre   # vector numérico 0/1
 AUTOR   <- "Natalia"
 K_FOLDS <- 5
 
+message("  train: ", nrow(train), " x ", ncol(train))
+message("  Prevalencia pobre (y_train==1): ",
+        round(mean(y_train == 1) * 100, 1), "%")
+
+cat("\n-- Verificacion codificacion y_train --\n")
+cat("  Valor 0:", sum(y_train == 0), "hogares\n")
+cat("  Valor 1:", sum(y_train == 1), "hogares\n")
+cat("  Proporcion 1 (pobres):", round(mean(y_train == 1) * 100, 1), "%\n")
+cat("  Esperado: ~20% — si es ~80%, los valores estan invertidos\n")
+
 # =============================================================================
 # LISTAS DE EXCLUSIÓN
 # =============================================================================
+
 VARS_EXCLUIR_A <- c(
   "id", "pobre",
-  "zona", "bogota", "doble_ingreso", "brecha_educ",
+  # Alias directos — misma lógica que LPM_002A
+  "bogota", "doble_ingreso", "brecha_educ",
   "indice_formalidad", "vulnerabilidad_lab", "n_fuentes_no_lab",
   "prop_contributivo", "costa_caribe", "region_pacifico", "eje_cafetero",
   "n_privaciones",
-  "estrato_hog", "estrato_bajo", "estrato_x_zona",
-  "ciudad", "dpto"
+  # NA en todo el test
+  "estrato_hog", "estrato_bajo", "estrato_x_zona"
+  # ciudad y dpto: YA NO SE EXCLUYEN — se incluyen como factor
 )
 
 VARS_EXCLUIR_B <- c(
   "id", "pobre",
-  "ciudad", "dpto",
+  # Alias — misma lógica que LPM_002B
   "sin_ocupados", "un_solo_ocupado",
   "nivel_educ_max", "nivel_educ_jefe",
   "prop_asalariado", "prop_cotiza_pension", "prop_prima_serv", "prop_sub_transp",
@@ -73,14 +78,22 @@ VARS_EXCLUIR_B <- c(
   "prop_afil_salud", "prop_subsidiado",
   "dep_educacion", "dep_vivienda", "dep_empleo_formal",
   "dep_proteccion", "dep_dependencia",
+  # NA en todo el test
   "estrato_hog", "estrato_bajo", "estrato_x_zona"
+  # ciudad y dpto: YA NO SE EXCLUYEN — se incluyen como factor
 )
 
 # =============================================================================
-# FOLDS DE CV (una sola vez, compartidos entre NB_001A y NB_001B)
+# FOLDS ESTRATIFICADOS
 # =============================================================================
-fold_ids <- sample(rep(1:K_FOLDS, length.out = nrow(train)))
-message("\nFolds de CV generados (semilla 42).")
+set.seed(42)
+fold_ids <- caret::createFolds(y = factor(y_train), k = K_FOLDS, list = FALSE)
+
+message("\nFolds estratificados (semilla 42):")
+for (k in 1:K_FOLDS) {
+  prop_k <- mean(y_train[fold_ids == k] == 1)
+  message(sprintf("  Fold %d: %.1f%% pobres", k, prop_k * 100))
+}
 
 # =============================================================================
 # FUNCIÓN run_nb()
@@ -105,13 +118,23 @@ run_nb <- function(model_id, notas, vars_excluir) {
   X_train_raw <- X_train_raw |> select(all_of(cols_comunes))
   X_test_raw  <- X_test_raw  |> select(all_of(cols_comunes))
 
-  message("\nPredictores: ", ncol(X_train_raw))
+  message("  Predictores: ", ncol(X_train_raw))
 
   # ── Preprocesamiento ──────────────────────────────────────────────────────
   preprocess_nb <- function(df, ref_medians = NULL) {
+
+    # zona: "1"/"2" character → numérico (es ordinal, no nominal)
     if ("zona" %in% names(df))
       df <- df |> mutate(zona = as.numeric(as.character(zona)))
+
+    # character → factor (ciudad, dpto, cotiza_pension, etc.)
+    # NB estima P(categoria | clase) para cada nivel → correcto
     df <- df |> mutate(across(where(is.character), as.factor))
+
+    # logical → numérico (TRUE=1, FALSE=0) para que kernel density funcione
+    df <- df |> mutate(across(where(is.logical), as.integer))
+
+    # Imputar NAs numéricos con mediana (sin data leakage)
     if (is.null(ref_medians)) {
       ref_medians <- df |>
         summarise(across(where(is.numeric), ~ median(., na.rm = TRUE))) |>
@@ -121,6 +144,14 @@ run_nb <- function(model_id, notas, vars_excluir) {
       if (col %in% names(df) && anyNA(df[[col]]))
         df[[col]][is.na(df[[col]])] <- ref_medians[[col]]
     }
+    # Imputar NAs en factores con la moda
+    for (col in names(df)) {
+      if (is.factor(df[[col]]) && anyNA(df[[col]])) {
+        moda <- names(sort(table(df[[col]]), decreasing = TRUE))[1]
+        df[[col]][is.na(df[[col]])] <- moda
+      }
+    }
+
     list(data = df, medians = ref_medians)
   }
 
@@ -139,12 +170,13 @@ run_nb <- function(model_id, notas, vars_excluir) {
                                ref_medians = medianas)$data
 
     y_tr_k <- factor(y_train[idx_train], levels = c(0, 1))
+    stopifnot("Nivel positivo debe ser '1'" = levels(y_tr_k)[2] == "1")
 
     modelo_k <- naiveBayes(x = df_tr, y = y_tr_k,
-                            laplace = 0, usekernel = TRUE)
+                            laplace = 1, usekernel = TRUE)
 
     prob_mat_k         <- predict(modelo_k, newdata = df_vl, type = "raw")
-    oof_probs[idx_val] <- prob_mat_k[, "1"]
+    oof_probs[idx_val] <- prob_mat_k[, "1"]  # P(pobre=1 | X)
 
     message(sprintf("  Fold %d/%d: P(pobre) en [%.3f, %.3f]",
                     k, K_FOLDS,
@@ -154,8 +186,12 @@ run_nb <- function(model_id, notas, vars_excluir) {
 
   if (any(is.na(oof_probs))) stop("NAs en oof_probs — revisar loop CV")
 
-  cat(sprintf("\n--- Diagnóstico OOF — %s ---\n", model_id))
+  cat(sprintf("\n--- Diagnostico OOF — %s ---\n", model_id))
   print(summary(oof_probs))
+
+  if (median(oof_probs) > 0.5)
+    warning("Mediana OOF > 0.5 — verificar codificacion de y_train (1=pobre?)")
+
   oof_probs_cl <- pmax(pmin(oof_probs, 1), 0)
 
   # ── PASO 3: Threshold óptimo (CV-OOF) ────────────────────────────────────
@@ -178,8 +214,10 @@ run_nb <- function(model_id, notas, vars_excluir) {
   THRESHOLD_OPT <- best_th_row$threshold
   THRESHOLD     <- THRESHOLD_OPT
 
-  cat(sprintf("\n--- Threshold óptimo (CV-OOF) — %s ---\n", model_id))
+  cat(sprintf("\n--- Threshold optimo (CV-OOF) — %s ---\n", model_id))
   print(best_th_row)
+  if (THRESHOLD_OPT > 0.80)
+    message("  AVISO: threshold > 0.80 — posible problema de calibracion o codificacion")
 
   th_label_x     <- if_else(THRESHOLD_OPT > 0.80, THRESHOLD_OPT - 0.04,
                               THRESHOLD_OPT + 0.02)
@@ -202,7 +240,7 @@ run_nb <- function(model_id, notas, vars_excluir) {
                  Recall    = "Recall (menos exclusion)")
     ) +
     labs(title    = paste0("Naive Bayes: metricas por threshold — ", model_id),
-         subtitle = sprintf("%d-fold CV OOF | n = %d | usekernel=TRUE",
+         subtitle = sprintf("%d-fold CV OOF | n = %d | usekernel=TRUE | laplace=1",
                             K_FOLDS, nrow(X_train_raw)),
          x = "Threshold", y = "Metrica", color = NULL) +
     theme_minimal(base_size = 12) +
@@ -210,9 +248,9 @@ run_nb <- function(model_id, notas, vars_excluir) {
 
   ggsave(file.path(dir_model, "threshold.png"),
          p_threshold, width = 8, height = 5, dpi = 150)
-  message("Grafico guardado: ", model_id, "/threshold.png")
+  message("  Grafico guardado: threshold.png")
 
-  # ── PASO 4: Modelo final (todo el train) ──────────────────────────────────
+  # ── PASO 4: Modelo final ──────────────────────────────────────────────────
   message("\n--- Modelo final — ", model_id, " ---")
 
   prep_full     <- preprocess_nb(X_train_raw)
@@ -222,16 +260,14 @@ run_nb <- function(model_id, notas, vars_excluir) {
   model_final <- naiveBayes(
     x         = X_train_f,
     y         = factor(y_train, levels = c(0, 1)),
-    laplace   = 0,
+    laplace   = 1,
     usekernel = TRUE
   )
 
-  message("  Entrenado sobre ", nrow(X_train_f), " hogares | ",
+  message("  Entrenado: ", nrow(X_train_f), " hogares | ",
           ncol(X_train_f), " predictores")
 
-  # ── PASO 5: Métricas CV y en train ────────────────────────────────────────
-
-  # Métricas CV-OOF (honestas — estas van al registry como cv_*)
+  # ── PASO 5: Métricas ──────────────────────────────────────────────────────
   oof_clase <- factor(if_else(oof_probs_cl >= THRESHOLD, "Pobre", "NoPobre"),
                       levels = c("NoPobre", "Pobre"))
   obs_clase <- factor(if_else(y_train == 1, "Pobre", "NoPobre"),
@@ -242,20 +278,20 @@ run_nb <- function(model_id, notas, vars_excluir) {
   cv_Precision <- cm_cv$byClass["Precision"]
   cv_Recall    <- cm_cv$byClass["Recall"]
 
-  # Métricas en train (en muestra — optimistas, van como train_* en registry)
   probs_train  <- predict(model_final, newdata = X_train_f, type = "raw")[, "1"]
-  pred_train   <- factor(if_else(probs_train >= THRESHOLD, "Pobre", "NoPobre"),
-                          levels = c("NoPobre", "Pobre"))
-  cm_train     <- confusionMatrix(pred_train, obs_clase, positive = "Pobre")
-
+  cm_train     <- confusionMatrix(
+    factor(if_else(probs_train >= THRESHOLD, "Pobre", "NoPobre"),
+           levels = c("NoPobre", "Pobre")),
+    obs_clase, positive = "Pobre"
+  )
   train_F1        <- cm_train$byClass["F1"]
   train_Precision <- cm_train$byClass["Precision"]
   train_Recall    <- cm_train$byClass["Recall"]
 
-  cat(sprintf("\n--- Métricas — %s ---\n", model_id))
-  cat(sprintf("  CV-OOF   F1: %.4f | Precision: %.4f | Recall: %.4f\n",
+  cat(sprintf("\n--- Metricas — %s ---\n", model_id))
+  cat(sprintf("  CV-OOF  F1: %.4f | Precision: %.4f | Recall: %.4f\n",
               cv_F1, cv_Precision, cv_Recall))
-  cat(sprintf("  Train    F1: %.4f | Precision: %.4f | Recall: %.4f  (optimistas)\n",
+  cat(sprintf("  Train   F1: %.4f | Precision: %.4f | Recall: %.4f  (optimistas)\n",
               train_F1, train_Precision, train_Recall))
 
   FN <- cm_cv$table["NoPobre", "Pobre"]
@@ -265,13 +301,11 @@ run_nb <- function(model_id, notas, vars_excluir) {
   cat(sprintf("  Filtracion (FP): %d no-pobres con beneficio (%.1f%%)\n",
               FP, FP / sum(y_train == 0) * 100))
 
-  # ROC
   roc_obj <- pROC::roc(response = y_train, predictor = oof_probs_cl, quiet = TRUE)
   auc_roc <- as.numeric(pROC::auc(roc_obj))
   message("  AUC-ROC (OOF): ", round(auc_roc, 4))
 
-  roc_df <- tibble(fpr = 1 - roc_obj$specificities,
-                   tpr = roc_obj$sensitivities)
+  roc_df <- tibble(fpr = 1 - roc_obj$specificities, tpr = roc_obj$sensitivities)
 
   p_roc <- ggplot(roc_df, aes(fpr, tpr)) +
     geom_line(color = "#534AB7", linewidth = 0.9) +
@@ -282,14 +316,14 @@ run_nb <- function(model_id, notas, vars_excluir) {
     scale_x_continuous(labels = function(x) paste0(round(x * 100), "%")) +
     scale_y_continuous(labels = function(x) paste0(round(x * 100), "%")) +
     labs(title    = paste0("Naive Bayes: curva ROC — ", model_id),
-         subtitle = "Predicciones CV-5 out-of-fold | usekernel=TRUE",
+         subtitle = "Predicciones CV-5 out-of-fold | usekernel=TRUE | laplace=1",
          x = "Tasa de Falsos Positivos (1 - Specificity)",
          y = "Tasa de Verdaderos Positivos (Recall)") +
     coord_equal() +
     theme_minimal(base_size = 12)
 
   ggsave(file.path(dir_model, "roc.png"), p_roc, width = 6, height = 6, dpi = 150)
-  message("Grafico guardado: ", model_id, "/roc.png")
+  message("  Grafico guardado: roc.png")
 
   pr_df <- tibble(
     TP        = roc_obj$sensitivities * sum(y_train == 1),
@@ -311,24 +345,23 @@ run_nb <- function(model_id, notas, vars_excluir) {
 
   ggsave(file.path(dir_model, "prcurve.png"),
          p_prcurve, width = 6, height = 5, dpi = 150)
-  message("Grafico guardado: ", model_id, "/prcurve.png")
+  message("  Grafico guardado: prcurve.png")
 
   # ── PASO 6: Submission ────────────────────────────────────────────────────
   X_test_f <- preprocess_nb(X_test_raw, ref_medians = medianas_full)$data
 
-  prob_mat_test <- predict(model_final, newdata = X_test_f, type = "raw")
-  probs_test    <- prob_mat_test[, "1"]
-  preds_test    <- as.integer(probs_test >= THRESHOLD)
+  probs_test <- predict(model_final, newdata = X_test_f, type = "raw")[, "1"]
+  preds_test <- as.integer(probs_test >= THRESHOLD)
 
   cat(sprintf("\n--- Predicciones test — %s ---\n", model_id))
-  cat(sprintf("%d hogares predichos como pobres (%.1f%%) | threshold = %.2f\n",
+  cat(sprintf("  %d hogares pobres (%.1f%%) | threshold = %.2f\n",
               sum(preds_test), mean(preds_test) * 100, THRESHOLD))
 
   submission_file <- file.path(dir_submissions,
                                 paste0("submission_", model_id, ".csv"))
   write_csv(tibble(id = test$id, pobre = preds_test), submission_file)
-  message("Submission guardada: ", submission_file)
-  message("-> Subir a Kaggle y anotar kaggle_public_F1 en model_registry.csv")
+  message("  Submission: ", submission_file)
+  message("  -> Subir a Kaggle y anotar kaggle_public_F1 en model_registry.csv")
 
   # ── PASO 7: Diagnósticos y registry ──────────────────────────────────────
   saveRDS(
@@ -347,10 +380,8 @@ run_nb <- function(model_id, notas, vars_excluir) {
          n_features = ncol(X_train_f)),
     file.path(dir_model, "diagnostics.rds")
   )
-  message("Diagnosticos guardados: ", model_id, "/diagnostics.rds")
+  message("  Diagnosticos: diagnostics.rds")
 
-  # Registry con exactamente las mismas columnas que CART
-  # cp y maxdepth son NA porque no aplican a Naive Bayes
   nueva_fila <- tibble(
     model_id           = model_id,
     fecha              = Sys.Date(),
@@ -366,8 +397,8 @@ run_nb <- function(model_id, notas, vars_excluir) {
     kaggle_public_F1   = NA_real_,
     threshold          = THRESHOLD,
     notas              = notas,
-    cp                 = NA_real_,   # no aplica a NB
-    maxdepth           = NA_real_,   # no aplica a NB
+    cp                 = NA_real_,
+    maxdepth           = NA_real_,
     train_F1           = round(train_F1,        4),
     train_Precision    = round(train_Precision, 4),
     train_Recall       = round(train_Recall,    4)
@@ -382,7 +413,7 @@ run_nb <- function(model_id, notas, vars_excluir) {
     nueva_fila
   }
   write_csv(registry, registry_path)
-  message("Registro actualizado: ", registry_path)
+  message("  Registry actualizado.")
 
   message("\n", strrep("=", 62))
   message("  ", model_id, " completado")
@@ -405,13 +436,21 @@ run_nb <- function(model_id, notas, vars_excluir) {
 # =============================================================================
 result_A <- run_nb(
   model_id     = "NB_001A",
-  notas        = "Sin indices compuestos — LPM_002A. usekernel=TRUE. Threshold CV-5 OOF.",
+  notas        = paste("Sin indices compuestos — LPM_002A.",
+                       "usekernel=TRUE, laplace=1.",
+                       "Ciudad/dpto incluidos como factor.",
+                       "Binarias 0/1 como distribucion (no factor).",
+                       "Folds estratificados. Threshold CV-5 OOF."),
   vars_excluir = VARS_EXCLUIR_A
 )
 
 result_B <- run_nb(
   model_id     = "NB_001B",
-  notas        = "Con indices compuestos — LPM_002B. usekernel=TRUE. Threshold CV-5 OOF.",
+  notas        = paste("Con indices compuestos — LPM_002B.",
+                       "usekernel=TRUE, laplace=1.",
+                       "Ciudad/dpto incluidos como factor.",
+                       "Binarias 0/1 como distribucion (no factor).",
+                       "Folds estratificados. Threshold CV-5 OOF."),
   vars_excluir = VARS_EXCLUIR_B
 )
 
@@ -428,13 +467,12 @@ print(comparacion, n = Inf)
 ganador    <- comparacion |> slice_max(cv_F1, n = 1, with_ties = FALSE)
 diferencia <- abs(comparacion$cv_F1[1] - comparacion$cv_F1[2])
 
-cat(sprintf("\nMejor modelo: %s (F1 = %.4f | AUC = %.4f | %d features)\n",
-            ganador$model_id, ganador$cv_F1, ganador$auc_roc, ganador$n_features))
-cat(sprintf("Diferencia en F1-CV: %.4f\n", diferencia))
-
-if (diferencia < 0.005) {
+cat(sprintf("\nMejor: %s (F1=%.4f | AUC=%.4f | th=%.2f | %d vars)\n",
+            ganador$model_id, ganador$cv_F1, ganador$auc_roc,
+            ganador$threshold, ganador$n_features))
+cat(sprintf("Diferencia F1-CV: %.4f\n", diferencia))
+if (diferencia < 0.005)
   cat("Diferencia < 0.005: preferir el mas parsimonioso —",
       comparacion |> slice_min(n_features, n = 1) |> pull(model_id), "\n")
-}
 
 # nolint end
