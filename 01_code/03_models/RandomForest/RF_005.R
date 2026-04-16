@@ -541,17 +541,94 @@ ggsave(file.path(dir_model, "threshold.png"),
        p_threshold, width = 8, height = 5, dpi = 150)
 message("  Guardado: threshold.png")
 
+# -- Gráfico 4: Curva ROC --
+roc_df <- tibble(
+  fpr = 1 - roc_obj$specificities,
+  tpr = roc_obj$sensitivities
+)
+
+p_roc <- ggplot(roc_df, aes(x = fpr, y = tpr)) +
+  geom_line(color = "#534AB7", linewidth = 0.9) +
+  geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", color = "gray60") +
+  annotate("text", x = 0.72, y = 0.65,
+           label = "Clasificador aleatorio",
+           size = 3, color = "gray50", angle = 35) +
+  annotate("text", x = 0.55, y = 0.15,
+           label = sprintf("AUC-ROC = %.4f", auc_roc),
+           size = 3.5, color = "#534AB7") +
+  scale_x_continuous(labels = function(x) paste0(round(x * 100), "%")) +
+  scale_y_continuous(labels = function(x) paste0(round(x * 100), "%")) +
+  labs(
+    title    = paste0("RF: curva ROC — ", MODEL_ID),
+    subtitle = sprintf("n_top=%d | th=%.2f | predicciones OOB (honesto)",
+                       best_n_top, best_th),
+    x        = "Tasa de Falsos Positivos  (1 - Specificity)",
+    y        = "Tasa de Verdaderos Positivos  (Recall)",
+    caption  = "AUC calculado sobre predicciones OOB del modelo final: estimación honesta."
+  ) +
+  coord_equal() +
+  theme_minimal(base_size = 12)
+
+ggsave(file.path(dir_model, "roc.png"),
+       p_roc, width = 6, height = 6, dpi = 150)
+message("  Guardado: roc.png")
+
+# -- Gráfico 5: Curva Precision-Recall --
+n_pos    <- sum(y_train == "Yes")
+n_neg    <- sum(y_train == "No")
+pr_curve_df <- tibble(
+  TP        = roc_obj$sensitivities * n_pos,
+  FP        = (1 - roc_obj$specificities) * n_neg,
+  recall    = roc_obj$sensitivities,
+  precision = TP / (TP + FP)
+) |> filter(is.finite(precision), is.finite(recall))
+
+prev_rate <- n_pos / (n_pos + n_neg)
+pt_opt    <- tibble(recall = best_pr_rc$recall, precision = best_pr_rc$precision)
+
+p_prcurve <- ggplot(pr_curve_df, aes(x = recall, y = precision)) +
+  geom_line(color = "#534AB7", linewidth = 0.9) +
+  geom_hline(yintercept = prev_rate,
+             linetype = "dashed", color = "gray60") +
+  annotate("text", x = 0.85, y = prev_rate + 0.015,
+           label = sprintf("Clasificador aleatorio (%.0f%%)", prev_rate * 100),
+           size = 3, color = "gray50") +
+  geom_point(data = pt_opt, aes(x = recall, y = precision),
+             color = "#E84855", size = 3) +
+  annotate("text",
+           x     = best_pr_rc$recall - 0.1,
+           y     = best_pr_rc$precision + 0.015,
+           label = sprintf("th=%.2f\nF1=%.4f", best_th, best_f1),
+           size  = 3, color = "#E84855") +
+  labs(
+    title    = paste0("RF: curva Precision-Recall — ", MODEL_ID),
+    subtitle = sprintf("AUC-ROC OOB: %.4f | n_top=%d | imbalance: none",
+                       auc_roc, best_n_top),
+    x        = "Recall  (fracción de pobres capturada)",
+    y        = "Precision  (fracción de predichos pobres que lo son)",
+    caption  = "Curva basada en predicciones OOB — honesta. Punto rojo = threshold óptimo."
+  ) +
+  theme_minimal(base_size = 12)
+
+ggsave(file.path(dir_model, "prcurve.png"),
+       p_prcurve, width = 6, height = 5, dpi = 150)
+message("  Guardado: prcurve.png")
+
 # Guardar diagnósticos
 saveRDS(
-  list(cv_df        = cv_df,
-       cv_summary   = cv_summary,
-       best_n_top   = best_n_top,
-       imp_final    = imp_final,
-       rf_final     = rf_final,
+  list(cv_df          = cv_df,
+       cv_summary     = cv_summary,
+       best_n_top     = best_n_top,
+       imp_final      = imp_final,
+       rf_final       = rf_final,
        feature_matrix = feature_matrix,
-       roc_obj      = roc_obj,
-       best_th      = best_th,
-       best_oob_f1  = best_f1),
+       roc_obj        = roc_obj,
+       auc_roc        = auc_roc,
+       best_th        = best_th,
+       best_oob_f1    = best_f1,
+       precision_oob  = best_pr_rc$precision,
+       recall_oob     = best_pr_rc$recall),
   file.path(dir_model, "diagnostics.rds")
 )
 message("  Guardado: diagnostics.rds")
@@ -593,9 +670,9 @@ nueva_fila <- tibble(
   n_features         = ncol(X_train_sel),
   imbalance_strategy = "none",
   cv_folds           = K_FOLDS,
-  cv_F1              = round(best_f1_cv,             4),
-  cv_Precision       = NA_real_,   # F1 promediado; precision/recall no se promediaron
-  cv_Recall          = NA_real_,
+  cv_F1              = round(best_f1,                4),
+  cv_Precision       = round(best_pr_rc$precision,   4),
+  cv_Recall          = round(best_pr_rc$recall,      4),
   auc_roc            = round(auc_roc,                4),
   kaggle_public_F1   = NA_real_,
   threshold          = best_th,
@@ -616,9 +693,9 @@ nueva_fila <- tibble(
   ),
   cp              = NA_real_,
   maxdepth        = NA_real_,
-  train_F1        = NA_real_,
-  train_Precision = NA_real_,
-  train_Recall    = NA_real_
+  train_F1        = round(best_f1,              4),
+  train_Precision = round(best_pr_rc$precision, 4),
+  train_Recall    = round(best_pr_rc$recall,    4)
 )
 
 if (file.exists(reg_path)) {
