@@ -225,7 +225,6 @@ run_cart_rf <- function(model_id, vars_sel) {
   }
 
   # cp final: el más frecuente entre los K_EXT folds
-  # (si hay empate, el menor — árboles más profundos generalizan mejor aquí)
   cp_tabla <- sort(table(cp_por_fold), decreasing = TRUE)
   CP_FINAL <- as.numeric(names(cp_tabla)[1])
 
