@@ -1,0 +1,48 @@
+=== ELASTIC NET -- BALANCE ===
+
+Mejor tecnica: baseline 
+Predictores: 93 
+alpha: 1 
+lambda: 1e-04 
+Threshold: 0.36 
+F1: 0.6964 
+AUC-ROC: 0.9239 
+
+-- Comparacion tecnicas (CV-5) --
+# A tibble: 5 × 4
+  technique     F1_mean  F1_sd th_mean
+  <chr>           <dbl>  <dbl>   <dbl>
+1 baseline        0.697 0.0079    0.36
+2 smote           0.686 0.0077    0.6 
+3 class_weights   0.682 0.0068    0.6 
+4 downsample      0.681 0.0073    0.6 
+5 upsample        0.681 0.007     0.6 
+
+-- Confusion Matrix --
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     No    Yes
+       No  118734   8328
+       Yes  13202  24696
+                                          
+               Accuracy : 0.8695          
+                 95% CI : (0.8678, 0.8711)
+    No Information Rate : 0.7998          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.6138          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.7478          
+            Specificity : 0.8999          
+         Pos Pred Value : 0.6516          
+         Neg Pred Value : 0.9345          
+             Prevalence : 0.2002          
+         Detection Rate : 0.1497          
+   Detection Prevalence : 0.2297          
+      Balanced Accuracy : 0.8239          
+                                          
+       'Positive' Class : Yes             
+                                          
