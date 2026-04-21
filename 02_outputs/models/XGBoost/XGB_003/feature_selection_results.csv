@@ -1,0 +1,8 @@
+feature_set,label,n_features,nrounds_cv,F1_OOF,Precision,Recall,AUC_ROC,Threshold
+All,Modelo — Todas las variables (baseline),110,282,0.7377,0.6892,0.7934,0.9429,0.35
+gain99,Gain acum. >= 99%  (85 variables),85,305,0.7363,0.6877,0.7924,0.9425,0.35
+gain95,Gain acum. >= 95%  (63 variables),63,289,0.7343,0.6807,0.7971,0.9418,0.33999999999999997
+gain90,Gain acum. >= 90%  (48 variables),48,298,0.731,0.6872,0.7808,0.94,0.36
+gain80,Gain acum. >= 80%  (30 variables),30,279,0.7183,0.6591,0.7893,0.935,0.33
+gain70,Gain acum. >= 70%  (19 variables),19,267,0.7082,0.6615,0.762,0.9299,0.35
+gain60,Gain acum. >= 60%  (12 variables),12,227,0.6861,0.6243,0.7616,0.9183,0.33
