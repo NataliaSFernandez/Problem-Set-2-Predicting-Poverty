@@ -910,7 +910,7 @@ vars_excluir_ambos <- c(
   # estrato_hog, estrato_bajo y estrato_x_zona son NA en el 100% de las filas
   # de test porque estrato no está disponible en test_personas.csv.
   # Se excluyen de ambos datasets para que los modelos no las usen.
-  "estrato_hog", "estrato_bajo", "estrato_x_zona","Bogotá"
+  "estrato_hog", "estrato_bajo", "estrato_x_zona","bogota"
 )
 
 vars_excluir_solo_train <- c(
