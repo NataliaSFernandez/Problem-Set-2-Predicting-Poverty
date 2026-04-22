@@ -8,7 +8,7 @@
 # ESPECIFICACIÓN A (sin variables compuestas):
 #   Elimina las variables que son combinaciones lineales exactas de otras
 #   (los índices compuestos) y conserva sus componentes originales.
-#   Variables excluidas: zona, bogota, doble_ingreso, brecha_educ,
+#   Variables excluidas: zona, doble_ingreso, brecha_educ,
 #     indice_formalidad, vulnerabilidad_lab, n_fuentes_no_lab,
 #     prop_contributivo, costa_caribe, region_pacifico, eje_cafetero,
 #     n_privaciones, estrato_hog, estrato_bajo, estrato_x_zona.
@@ -78,7 +78,7 @@ MODEL_ID <- "LPM_003A"
 
 set.seed(42)
 
-dir_model     <- file.path("02_outputs/models/LPM", MODEL_ID)
+dir_model     <- file.path("02_outputs/models/LPM/Balance", MODEL_ID)
 dir_subs      <- "03_submissions"
 reg_path      <- "02_outputs/model_registry.csv"
 feat_mat_path <- "02_outputs/models/RandomForest/RF_006/feature_matrix.csv"
@@ -101,7 +101,6 @@ TECHNIQUES <- c("baseline", "class_weights", "downsample", "upsample", "smote")
 VARS_EXCLUIR_A <- c(
   "id", "pobre",
   "zona",             # ciudadRURAL en el factor ciudad ya captura rural/urbano
-  "bogota",           # duplica ciudadBOGOTA y dpto11
   "doble_ingreso",    # = 1 - sin_ocupados - un_solo_ocupado
   "brecha_educ",      # = nivel_educ_max - nivel_educ_jefe
   "indice_formalidad",    # = prop_asalariado + prop_cotiza_pension + prop_prima_serv + prop_sub_transp
