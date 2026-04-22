@@ -32,15 +32,14 @@
 #              alguno_*, etc.). Máxima granularidad, modelo más grande.
 #
 #   LPM_002B — Con variables compuestas: se eliminan los componentes y se
-#              conservan los índices agregados (zona, bogota, n_privaciones,
+#              conservan los índices agregados (zona, n_privaciones,
 #              indice_formalidad, etc.). Modelo más parsimonioso.
 #
 #   Al final, el script compara F1-CV, Precision, Recall y AUC-ROC de ambos
 #   para decidir cuál especificación conviene subir a Kaggle.
 #
-#   Las 13 relaciones de dependencia lineal perfecta son:
+#   Las 12 relaciones de dependencia lineal perfecta son:
 #     ciudadRURAL    = f(zona)
-#     dpto11         = f(ciudadBOGOTA)
 #     doble_ingreso  = 1 − sin_ocupados − un_solo_ocupado
 #     brecha_educ    = nivel_educ_max − nivel_educ_jefe
 #     indice_formalidad  = prop_asalariado + prop_cotiza_pension +
@@ -50,7 +49,6 @@
 #     prop_contributivo  = prop_afil_salud + prop_subsidiado
 #     costa_caribe       = suma de dummies dpto del litoral Caribe
 #     region_pacifico    = suma de dummies dpto del litoral Pacífico
-#     bogota             = ciudadBOGOTA
 #     eje_cafetero       = suma de dummies dpto del Eje Cafetero
 #     n_privaciones      = dep_educacion + dep_vivienda + dep_empleo_formal +
 #                          dep_proteccion + dep_dependencia
@@ -126,7 +124,7 @@ set.seed(42)
 # Si usas RStudio Projects, la raíz es automáticamente la carpeta del proyecto.
 
 dir_processed   <- "00_data/processed"       # donde están train_final.rds y test_final.rds
-dir_outputs_lpm <- "02_outputs/models/LPM"   # carpeta base del algoritmo LPM
+dir_outputs_lpm <- "02_outputs/models/LPM/Baseline"   # carpeta base del algoritmo LPM
 dir_submissions <- "03_submissions"           # CSVs listos para subir a Kaggle
 registry_path   <- "02_outputs/model_registry.csv"  # tabla maestra de todos los modelos
 
@@ -140,15 +138,6 @@ fs::dir_create("02_outputs", recurse = TRUE)
 # =============================================================================
 # SECCIÓN 1: IDENTIFICACIÓN DE LOS DOS MODELOS
 # =============================================================================
-# ┌──────────────────────────────────────────────────────────────────────────┐
-# │  >>>  MODIFICAR ESTOS CAMPOS ANTES DE CORRER EL SCRIPT  <<<              │
-# │                                                                          │
-# │  AUTOR:   nombre del autor (para el registro compartido del equipo).     │
-# │  K_FOLDS: número de folds de CV (no cambiar salvo razón justificada).   │
-# │                                                                          │
-# │  Los MODEL_ID están fijos: LPM_002A y LPM_002B.                          │
-# │  No modificarlos — identifican unívocamente las dos especificaciones.   │
-# └──────────────────────────────────────────────────────────────────────────┘
 
 AUTOR   <- "Jonathan"  # <<< MODIFICAR
 K_FOLDS <- 5           # 5 folds → cada fold valida sobre ~32,992 hogares
@@ -226,12 +215,6 @@ VARS_EXCLUIR_A <- c(
   # captura la misma información que zona. Al eliminar zona, lm() no genera
   # la combinación lineal que causaba el alias.
   "zona",
-  # bogota es un indicador binario que duplica exactamente a ciudadBOGOTA
-  # (nivel del factor ciudad) y a dpto11 (nivel del factor dpto). Con el
-  # factor ciudad y dpto ya en el modelo, bogota es completamente redundante.
-  "bogota",
-  # doble_ingreso fue construido como 1 - sin_ocupados - un_solo_ocupado.
-  # Al eliminarla, conservamos sus dos componentes originales del mercado laboral.
   "doble_ingreso",
   # brecha_educ fue construida como nivel_educ_max - nivel_educ_jefe.
   # Al eliminarla, conservamos ambos niveles de educación por separado.
@@ -271,7 +254,6 @@ VARS_EXCLUIR_A <- c(
 # Se eliminan los componentes granulares y se conservan los índices agregados.
 # El modelo queda con:
 #   • zona           (rural/urbano — captura la distinción geográfica clave)
-#   • bogota         (indicador binario de Bogotá)
 #   • costa_caribe, region_pacifico, eje_cafetero (dummies regionales)
 #   • doble_ingreso  (indicador de hogar con dos o más ocupados)
 #   • brecha_educ    (brecha de educación entre el máximo del hogar y el jefe)
@@ -280,22 +262,17 @@ VARS_EXCLUIR_A <- c(
 #   • prop_contributivo (fracción con seguridad social contributiva)
 #   • n_privaciones  (conteo de dimensiones IPM con privación)
 #
-# NOTA: al eliminar 'ciudad' y 'dpto' (factores con muchos niveles) y
-# reemplazarlos por zona + dummies regionales + bogota, el modelo pierde
 # la heterogeneidad intra-región pero gana parsimonia. Algunos departamentos
 # no cubiertos por las dummies regionales quedan sin identificación geográfica
 # propia — esto es una limitación conocida de esta especificación.
 
 VARS_EXCLUIR_B <- c(
   "id", "pobre",
-  # ciudad tiene muchos niveles (una dummy por ciudad). Su nivel RURAL es
-  # redundante con zona; su nivel BOGOTA es redundante con bogota. Al eliminar
-  # ciudad, zona y bogota cubren la distinción rural/urbano y la capital.
+  # ciudad tiene muchos niveles (una dummy por ciudad). 
+  # ciudad, zona cubren la distinción rural/urbano.
   "ciudad",
   # dpto tiene ~33 niveles (una dummy por departamento). Las dummies regionales
-  # (costa_caribe, region_pacifico, eje_cafetero) y bogota ya capturan la
-  # variación geográfica de forma más agregada. Al eliminar dpto, resolvemos
-  # los alias con costa_caribe, region_pacifico, eje_cafetero y bogota.
+  # (costa_caribe, region_pacifico, eje_cafetero) 
   "dpto",
   # sin_ocupados y un_solo_ocupado son los dos componentes de doble_ingreso.
   # doble_ingreso = 1 - sin_ocupados - un_solo_ocupado, así que basta con
@@ -876,8 +853,6 @@ run_lpm <- function(model_id, notas, vars_excluir) {
   )
   write_csv(submission, submission_file)
   message("Submission guardada: ", submission_file)
-  message("→ Subir este archivo a Kaggle y anotar el public F1 en model_registry.csv")
-
 
   # ---------------------------------------------------------------------------
   # PASO 7: GUARDAR DIAGNÓSTICOS
@@ -925,12 +900,6 @@ run_lpm <- function(model_id, notas, vars_excluir) {
   # model_registry.csv es la tabla maestra del equipo: una fila por corrida.
   # Si el archivo no existe, lo crea. Si ya existe, agrega la fila al final.
   # Permite comparar todos los modelos del equipo en un solo lugar.
-  #
-  # ┌──────────────────────────────────────────────────────────────────────────┐
-  # │  >>>  DESPUÉS DE SUBIR LA SUBMISSION A KAGGLE  <<<                      │
-  # │  Editar manualmente model_registry.csv y completar kaggle_public_F1     │
-  # │  con el puntaje que aparece en el public leaderboard de Kaggle.         │
-  # └──────────────────────────────────────────────────────────────────────────┘
 
   nueva_fila <- tibble(
     model_id           = model_id,
@@ -998,7 +967,7 @@ result_A <- run_lpm(
 
 result_B <- run_lpm(
   model_id     = "LPM_002B",
-  notas        = "Con índices compuestos — se eliminan componentes: zona, bogota, dummies regionales, n_privaciones, etc.",
+  notas        = "Con índices compuestos — se eliminan componentes: zona, dummies regionales, n_privaciones, etc.",
   vars_excluir = VARS_EXCLUIR_B
 )
 
@@ -1049,14 +1018,6 @@ if (diferencia_F1 < 0.005) {
   cat(sprintf("  Se recomienda preferir %s (%d features, más parsimonioso).\n",
               mas_parsimonioso$model_id, mas_parsimonioso$n_features))
 }
-
-cat("\n► Próximos pasos:\n")
-cat("  1. Subir ambas submissions a Kaggle y registrar el public F1 en\n")
-cat("     02_outputs/model_registry.csv (columna kaggle_public_F1).\n")
-cat("  2. Si el public F1 confirma al ganador del CV, usar esa especificación\n")
-cat("     como base para la siguiente iteración (ver Sección 8).\n")
-cat("  3. Si el CV y Kaggle discrepan, sospechar sobreajuste al threshold;\n")
-cat("     probar con threshold fijo (ej. 0.50) o folds estratificados.\n\n")
 
 
 # =============================================================================
