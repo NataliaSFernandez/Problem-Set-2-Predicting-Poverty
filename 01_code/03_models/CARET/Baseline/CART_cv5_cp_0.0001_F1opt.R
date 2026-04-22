@@ -4,8 +4,9 @@
 #==============================================================================
 # ALGORITMO : CART — Classification and Regression Tree (rpart)
 # PASOS:
+# SEgundo script de CART
 #   Paso 2 — Tuning cp con CV-5           
-# Mismo procesamiento que baseline, pero con tuning de cp usando validación cruzada.
+# Mismo procesamiento que baseline, pero con tuning de cp usando validación cruzada. 
 # HIPERPARÁMETROS:
 #   cp (complexity parameter): penaliza la complejidad del árbol.
 #      Valor pequeño = árbol profundo = más flexibilidad, riesgo de overfitting.
@@ -52,7 +53,6 @@ preparar_X_cart <- function(df) {
  
     # ciudad y dpto: character de alta cardinalidad
     # Con 24+ niveles, rpart crea ramas con muy pocas obs → no generaliza
-    # Las variables costa_caribe, bogota, eje_cafetero ya capturan la región
     select(-any_of(c("ciudad", "dpto"))) |>
     mutate(across(where(is.character), as.factor))
 }
@@ -61,6 +61,42 @@ X_train <- preparar_X_cart(train)
 X_test  <- preparar_X_cart(test)
 niveles <- c("0", "1")
 y_train <- factor(train$pobre, levels = niveles)
+
+# -- Variables a excluir --------------------------------------
+#Variables excluidas a mano ya que estas son interacciones que los arboles 
+#por su naturaleza las pueden crear ellos mismos
+#Se excluyen variables cuadráticas, logarítmicas, y de interacción, que no aportan
+
+VARS_EXCLUIR <- c(
+  # Cuadráticas de capital humano (Bloque 3)
+  "educ_jefe_sq",
+  "educ_prom_sq",
+  # Logarítmicas (Bloque 9)
+  "log_num_personas",
+  "log_n_menores",
+  # Cuadráticas generales (Bloque 9)
+  "ratio_depend_sq",
+  "tasa_ocup_sq",
+  "hacinamiento_sq",
+  "edad_jefe_sq",
+  # Interacciones (Bloque 8)
+  "educ_x_formal",
+  "educ_x_ocup",
+  "menores_x_desocup",
+  "depend_x_informal",
+  "rural_x_cta_propia",
+  "educ_x_rural",
+  "subsidiado_x_menores",
+  "jefe_mayor_pension"
+)
+
+# -- Eliminar variables de VARS_EXCLUIR --------------------------------------
+X_train <- X_train |> select(-any_of(VARS_EXCLUIR))
+X_test  <- X_test  |> select(-any_of(VARS_EXCLUIR))
+
+message("  Variables excluidas manualmente: ", length(VARS_EXCLUIR))
+message("  Predictores tras exclusión: ", ncol(X_train))
+
 
 # Alinear columnas train/test
 cols_comunes <- intersect(names(X_train), names(X_test))
