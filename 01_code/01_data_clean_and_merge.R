@@ -720,15 +720,6 @@ construir_nuevas_variables <- function(df) {
         alguno_arriendos   == 1 | alguno_agropec    == 1
       ),
 
-      # Depende exclusivamente de subsidios estatales (fuente más precaria)
-      solo_subsidio        = as.integer(
-        alguno_subsidio    == 1 &
-        alguno_pension_jub == 0 &
-        alguno_remesas     == 0 &
-        alguno_intereses   == 0 &
-        alguno_arriendos   == 0
-      ),
-
       # Tiene ingresos de activos: intereses o arrendamientos (capital acumulado)
       ingresos_activos     = as.integer(
         alguno_intereses == 1 | alguno_arriendos == 1
@@ -772,7 +763,9 @@ construir_nuevas_variables <- function(df) {
 
       # Región Pacífica (excluye Cali — Valle del Cauca)
       region_pacifico      = as.integer(dpto %in% c("19", "27", "52")),
-
+      # Bogotá: se construye pero se excluirá en el paso 10 (vars_excluir_ambos)
+      # porque los hogares de Bogotá son eliminados en el paso 12.3 por no estar
+      # en test. La columna queda con varianza cero y no aporta información.
       # Bogotá D.C.: menor pobreza por concentración de empleo formal
       bogota               = as.integer(dpto == "11"),
 
@@ -917,7 +910,7 @@ vars_excluir_ambos <- c(
   # estrato_hog, estrato_bajo y estrato_x_zona son NA en el 100% de las filas
   # de test porque estrato no está disponible en test_personas.csv.
   # Se excluyen de ambos datasets para que los modelos no las usen.
-  "estrato_hog", "estrato_bajo", "estrato_x_zona"
+  "estrato_hog", "estrato_bajo", "estrato_x_zona","Bogotá"
 )
 
 vars_excluir_solo_train <- c(
