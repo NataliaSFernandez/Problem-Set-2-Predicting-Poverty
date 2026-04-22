@@ -90,7 +90,7 @@ MODEL_ID <- "RF_006"
 
 set.seed(42)
 
-dir_model <- file.path("02_outputs/models/RandomForest/Balance", MODEL_ID)
+dir_model <- file.path("02_outputs/models/RandomForest", MODEL_ID)
 dir_subs  <- "03_submissions"
 reg_path  <- "02_outputs/model_registry.csv"
 

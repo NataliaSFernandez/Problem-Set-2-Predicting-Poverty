@@ -45,7 +45,7 @@ cat("  Proporcion 1 (pobres):", round(mean(y_train == 1) * 100, 1),
 message("\n== Cargando importancia de RF ==")
 
 rf_imp <- read_csv(
-  "02_outputs/models/RandomForest/RF_003/feature_matrix.csv",
+  "02_outputs/models/RandomForest/RF_006/feature_matrix.csv",
   show_col_types = FALSE
 ) |>
   filter(importancia > 0) |>
@@ -335,7 +335,7 @@ run_nb_rf <- function(model_id, vars_sel) {
     kaggle_public_F1   = NA_real_,
     threshold          = THRESHOLD,
     notas              = paste0("NB top-", length(vars_ok),
-                                " vars RF_001. usekernel=TRUE, laplace=1.",
+                                " vars RF_006. usekernel=TRUE, laplace=1.",
                                 " Ciudad/dpto incluidos si en top-N.",
                                 " Binarias como distribucion (no factor).",
                                 " Threshold CV-5 OOF."),

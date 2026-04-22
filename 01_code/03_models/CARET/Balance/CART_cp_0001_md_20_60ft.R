@@ -142,7 +142,7 @@ X_full_test  <- X_full_test  |> select(all_of(cols_comunes))
 message("\n== Cargando importancia RF (top-", N_TOP, ") ==")
 
 rf_imp <- read_csv(
-  "02_outputs/models/RandomForest/RF_001/feature_matrix.csv",
+  "02_outputs/models/RandomForest/RF_006/feature_matrix.csv",
   show_col_types = FALSE
 ) |>
   filter(importancia > 0) |>
