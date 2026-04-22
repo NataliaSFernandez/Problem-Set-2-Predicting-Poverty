@@ -33,9 +33,9 @@ pacman::p_load(
   fs           # manejo de archivos y directorios
 )
 
-# Cargamos los datos limpios que generó Natalia en el script 01
+# Cargamos los datos limpios  del script 01
 dir_processed <- "00_data/processed"
-dir_figures   <- "02_outputs/figures"
+dir_figures   <- "02_outputs/figures/data_explore"
 fs::dir_create(dir_figures, recurse = TRUE)
 train <- readRDS(file.path(dir_processed, "train_final.rds"))
 test  <- readRDS(file.path(dir_processed, "test_final.rds"))

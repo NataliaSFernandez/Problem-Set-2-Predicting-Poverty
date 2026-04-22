@@ -1,0 +1,296 @@
+=== RESUMEN DESCRIPTIVO GENERAL ===
+
+── Data Summary ────────────────────────
+                           Values    
+Name                       Piped data
+Number of rows             154393    
+Number of columns          109       
+_______________________              
+Column type frequency:               
+  numeric                  109       
+________________________             
+Group variables            None      
+
+── Variable type: numeric ──────────────────────────────────────────────────────
+    skim_variable        n_missing complete_rate     mean            sd
+  1 zona                         0             1 1.10 e+0       0.300  
+  2 num_cuartos                  0             1 3.40 e+0       1.23   
+  3 num_cuartos_dorm             0             1 1.99 e+0       0.899  
+  4 tipo_tenencia                0             1 2.46 e+0       1.27   
+  5 arriendo_pagado              0             1 2.92 e+4 1175277.     
+  6 arriendo_estimado            0             1 2.86 e+5 2897710.     
+  7 valor_alojamiento            0             1 1.61 e+5  871429.     
+  8 num_personas                 0             1 3.31 e+0       1.79   
+  9 num_personas_ug              0             1 3.30 e+0       1.79   
+ 10 n_menores_18                 0             1 9.33 e-1       1.13   
+ 11 n_adultos_may                0             1 3.24 e-1       0.609  
+ 12 edad_prom                    0             1 3.74 e+1      16.9    
+ 13 edad_jefe                    0             1 4.97 e+1      16.4    
+ 14 prop_mujeres                 0             1 5.27 e-1       0.277  
+ 15 ratio_depend                 0             1 5.94 e-1       0.671  
+ 16 nivel_educ_max               0             1 5.11 e+0       1.12   
+ 17 nivel_educ_jefe              0             1 4.35 e+0       1.41   
+ 18 nivel_educ_prom              0             1 4.29 e+0       1.08   
+ 19 n_ocupados                   0             1 1.50 e+0       1.03   
+ 20 n_desempleados               0             1 1.82 e-1       0.446  
+ 21 n_inactivos                  0             1 1.04 e+0       1.04   
+ 22 tasa_ocupacion               0             1 5.79 e-1       0.338  
+ 23 tasa_desempleo               0             1 8.91 e-2       0.228  
+ 24 prop_asalariado              0             1 2.02 e-1       0.277  
+ 25 prop_cta_propia              0             1 2.35 e-1       0.292  
+ 26 prop_informal                0             1 2.57 e-1       0.306  
+ 27 prop_afil_salud              0             1 9.43 e-1       0.183  
+ 28 prop_subsidiado              0             1 3.75 e-1       0.394  
+ 29 prop_cotiza_pension          0             1 1.87 e-1       0.273  
+ 30 prop_pensionado              0             1 1.12 e-2       0.0797 
+ 31 prop_prima_serv              0             1 9.12 e-1       0.196  
+ 32 prop_sub_alim                0             1 5.62 e-3       0.0537 
+ 33 prop_sub_transp              0             1 1.01 e-1       0.206  
+ 34 prop_subempleo               0             1 4.35 e-2       0.145  
+ 35 prop_2do_empleo              0             1 2.62 e-2       0.114  
+ 36 alguno_pension_jub           0             1 9.88 e-1       0.110  
+ 37 alguno_remesas               0             1 1.99 e-2       0.140  
+ 38 alguno_subsidio              0             1 1.58 e-1       0.365  
+ 39 alguno_transf_nac            0             1 2.33 e-1       0.423  
+ 40 alguno_intereses             0             1 7.92 e-3       0.0886 
+ 41 alguno_cesantias             0             1 5.88 e-2       0.235  
+ 42 alguno_agropec               0             1 1.15 e-2       0.106  
+ 43 horas_prom                   0             1 2.21 e+1      16.1    
+ 44 mujer_jefa                   0             1 4.21 e-1       0.494  
+ 45 hogar_monoparental           0             1 2.24 e-1       0.417  
+ 46 prop_patron                  0             1 1.99 e-2       0.102  
+ 47 prop_domestico               0             1 1.46 e-2       0.0783 
+ 48 prop_fam_sin_rem             0             1 1.30 e-2       0.0692 
+ 49 prop_jornalero               0             1 7.66 e-3       0.0661 
+ 50 prop_microempresa            0             1 7.83 e-1       0.287  
+ 51 prop_gran_empresa            0             1 1.50 e-1       0.251  
+ 52 antiguedad_prom              0             1 4.62 e+1      71.8    
+ 53 antiguedad_alta              0             1 6.07 e-1       0.488  
+ 54 alguno_arriendos             0             1 8.90 e-2       0.285  
+ 55 hacinamiento                 0             1 1.06 e+0       0.687  
+ 56 hacinamiento_dorm            0             1 1.74 e+0       0.839  
+ 57 cuartos_pc                   0             1 1.32 e+0       0.875  
+ 58 tenencia_insegura            0             1 5.85 e-1       0.493  
+ 59 vivienda_propia_pag          0             1 3.82 e-1       0.486  
+ 60 prop_menores                 0             1 2.19 e-1       0.232  
+ 61 prop_adultos_may_p           0             1 1.33 e-1       0.276  
+ 62 menores_por_ocupado          0             1 6.42 e-1       0.861  
+ 63 sin_ocupados                 0             1 1.36 e-1       0.343  
+ 64 un_solo_ocupado              0             1 4.19 e-1       0.493  
+ 65 doble_ingreso                0             1 4.45 e-1       0.497  
+ 66 educ_jefe_sq                 0             1 2.09 e+1      11.5    
+ 67 educ_prom_sq                 0             1 1.96 e+1       8.98   
+ 68 educ_media_o_mas             0             1 5.27 e-1       0.499  
+ 69 educ_superior_jefe           0             1 2.69 e-1       0.443  
+ 70 brecha_educ                  0             1 7.60 e-1       1.10   
+ 71 indice_formalidad            0             1 3.50 e-1       0.161  
+ 72 formal_estricto              0             1 9.05 e-2       0.209  
+ 73 vulnerabilidad_lab           0             1 3.53 e-2       0.122  
+ 74 tasa_empleo_total            0             1 4.94 e-1       0.318  
+ 75 n_fuentes_no_lab             0             1 1.57 e+0       0.698  
+ 76 tiene_ingreso_no_lab         0             1 1.000e+0       0.00918
+ 77 solo_subsidio                0             1 6.48 e-6       0.00254
+ 78 ingresos_activos             0             1 9.50 e-2       0.293  
+ 79 proteccion_social            0             1 9.90 e-1       0.0978 
+ 80 desprotegido                 0             1 2.74 e-3       0.0523 
+ 81 prop_contributivo            0             1 5.69 e-1       0.400  
+ 82 costa_caribe                 0             1 3.03 e-1       0.459  
+ 83 region_pacifico              0             1 1.27 e-1       0.333  
+ 84 bogota                       0             1 0              0      
+ 85 eje_cafetero                 0             1 1.92 e-1       0.394  
+ 86 rural_costa_caribe           0             1 2.30 e-2       0.150  
+ 87 educ_x_formal                0             1 9.43 e-1       1.49   
+ 88 educ_x_ocup                  0             1 2.57 e+0       1.82   
+ 89 menores_x_desocup            0             1 4.29 e-1       0.693  
+ 90 depend_x_informal            0             1 1.20 e-1       0.245  
+ 91 rural_x_cta_propia           0             1 2.93 e-2       0.132  
+ 92 educ_x_rural                 0             1 3.18 e-1       1.04   
+ 93 subsidiado_x_menores         0             1 3.47 e-1       0.638  
+ 94 jefe_mayor_pension           0             1 3.58 e-1       0.479  
+ 95 log_num_personas             0             1 1.38 e+0       0.406  
+ 96 log_n_menores                0             1 5.11 e-1       0.530  
+ 97 ratio_depend_sq              0             1 8.03 e-1       1.78   
+ 98 tasa_ocup_sq                 0             1 4.49 e-1       0.385  
+ 99 hacinamiento_sq              0             1 1.60 e+0       3.25   
+100 edad_jefe_sq                 0             1 2.74 e+3    1718.     
+101 dep_educacion                0             1 3.41 e-1       0.474  
+102 dep_vivienda                 0             1 1.36 e-2       0.116  
+103 dep_empleo_formal            0             1 3.44 e-1       0.475  
+104 dep_proteccion               0             1 5.07 e-3       0.0710 
+105 dep_dependencia              0             1 1.17 e-1       0.321  
+106 n_privaciones                0             1 8.21 e-1       0.854  
+107 multi_privado                0             1 2.21 e-1       0.415  
+108 privado_severo               0             1 3.25 e-2       0.177  
+109 pobre                        0             1 2.07 e-1       0.405  
+            p0      p25        p50        p75         p100 hist 
+  1   1           1          1          1             2    ▇▁▁▁▁
+  2   1           3          3          4            98    ▇▁▁▁▁
+  3   1           1          2          3            15    ▇▁▁▁▁
+  4   1           1          3          3             6    ▇▇▃▁▁
+  5   0           0          0          0     280000000    ▇▁▁▁▁
+  6   0           0     100000     400000     600000000    ▇▁▁▁▁
+  7   0           0          0     300000     300000000    ▇▁▁▁▁
+  8   1           2          3          4            28    ▇▁▁▁▁
+  9   1           2          3          4            28    ▇▁▁▁▁
+ 10   0           0          1          2            15    ▇▁▁▁▁
+ 11   0           0          0          1             6    ▇▁▁▁▁
+ 12   5.67       24         33.3       48.2         102    ▅▇▃▂▁
+ 13  11          37         49         61           108    ▃▇▇▂▁
+ 14   0           0.333      0.5        0.667         1    ▃▅▇▅▃
+ 15   0           0          0.5        1             7    ▇▁▁▁▁
+ 16   1           5          5          6             9    ▁▃▅▇▁
+ 17   1           3          5          6             9    ▁▇▅▅▁
+ 18   1           3.5        4.33       5             9    ▁▇▇▂▁
+ 19   0           1          1          2            14    ▇▁▁▁▁
+ 20   0           0          0          0             6    ▇▁▁▁▁
+ 21   0           0          1          2            11    ▇▁▁▁▁
+ 22   0           0.333      0.5        1             1    ▅▅▇▅▇
+ 23   0           0          0          0             1    ▇▁▁▁▁
+ 24   0           0          0          0.333         1    ▇▂▁▁▁
+ 25   0           0          0.167      0.333         1    ▇▃▂▁▁
+ 26   0           0          0.2        0.5           1    ▇▃▂▁▁
+ 27   0           1          1          1             1    ▁▁▁▁▇
+ 28   0           0          0.25       0.714         1    ▇▂▂▂▃
+ 29   0           0          0          0.333         1    ▇▂▁▁▁
+ 30   0           0          0          0             1    ▇▁▁▁▁
+ 31   0           1          1          1             1    ▁▁▁▁▇
+ 32   0           0          0          0             1    ▇▁▁▁▁
+ 33   0           0          0          0.143         1    ▇▁▁▁▁
+ 34   0           0          0          0             1    ▇▁▁▁▁
+ 35   0           0          0          0             1    ▇▁▁▁▁
+ 36   0           1          1          1             1    ▁▁▁▁▇
+ 37   0           0          0          0             1    ▇▁▁▁▁
+ 38   0           0          0          0             1    ▇▁▁▁▂
+ 39   0           0          0          0             1    ▇▁▁▁▂
+ 40   0           0          0          0             1    ▇▁▁▁▁
+ 41   0           0          0          0             1    ▇▁▁▁▁
+ 42   0           0          0          0             1    ▇▁▁▁▁
+ 43   0          12         20         30.7         130    ▇▃▁▁▁
+ 44   0           0          0          1             1    ▇▁▁▁▆
+ 45   0           0          0          0             1    ▇▁▁▁▂
+ 46   0           0          0          0             1    ▇▁▁▁▁
+ 47   0           0          0          0             1    ▇▁▁▁▁
+ 48   0           0          0          0             1    ▇▁▁▁▁
+ 49   0           0          0          0             1    ▇▁▁▁▁
+ 50   0           0.667      1          1             1    ▁▁▂▃▇
+ 51   0           0          0          0.25          1    ▇▂▁▁▁
+ 52   0           3         20         60           900    ▇▁▁▁▁
+ 53   0           0          1          1             1    ▅▁▁▁▇
+ 54   0           0          0          0             1    ▇▁▁▁▁
+ 55   0.0306      0.667      1          1.33         13    ▇▁▁▁▁
+ 56   0.2         1          1.5        2            16    ▇▁▁▁▁
+ 57   0.0769      0.75       1          1.5          32.7  ▇▁▁▁▁
+ 58   0           0          1          1             1    ▆▁▁▁▇
+ 59   0           0          0          1             1    ▇▁▁▁▅
+ 60   0           0          0.2        0.4           1    ▇▃▃▁▁
+ 61   0           0          0          0.125         1    ▇▁▁▁▁
+ 62   0           0          0.333      1            12    ▇▁▁▁▁
+ 63   0           0          0          0             1    ▇▁▁▁▁
+ 64   0           0          0          1             1    ▇▁▁▁▆
+ 65   0           0          0          1             1    ▇▁▁▁▆
+ 66   1           9         25         36            81    ▇▅▅▁▁
+ 67   1          12.2       18.8       25            81    ▇▇▂▁▁
+ 68   0           0          1          1             1    ▇▁▁▁▇
+ 69   0           0          0          1             1    ▇▁▁▁▃
+ 70   0           0          0          1             8    ▇▂▁▁▁
+ 71   0           0.25       0.25       0.417         1    ▁▇▂▁▁
+ 72   0           0          0          0.08          1    ▇▁▁▁▁
+ 73   0           0          0          0             1    ▇▁▁▁▁
+ 74   0           0.25       0.5        0.667         1    ▆▇▇▅▆
+ 75   0           1          1          2             6    ▇▅▂▁▁
+ 76   0           1          1          1             1    ▁▁▁▁▇
+ 77   0           0          0          0             1    ▇▁▁▁▁
+ 78   0           0          0          0             1    ▇▁▁▁▁
+ 79   0           1          1          1             1    ▁▁▁▁▇
+ 80   0           0          0          0             1    ▇▁▁▁▁
+ 81   0           0.2        0.6        1             1    ▅▃▂▂▇
+ 82   0           0          0          1             1    ▇▁▁▁▃
+ 83   0           0          0          0             1    ▇▁▁▁▁
+ 84   0           0          0          0             0    ▁▁▇▁▁
+ 85   0           0          0          0             1    ▇▁▁▁▂
+ 86   0           0          0          0             1    ▇▁▁▁▁
+ 87   0           0          0          1.5           6    ▇▂▁▁▁
+ 88   0           1.2        2.5        4             9    ▇▇▃▂▁
+ 89   0           0          0          0.667        10.8  ▇▁▁▁▁
+ 90   0           0          0          0.167         4    ▇▁▁▁▁
+ 91   0           0          0          0             1    ▇▁▁▁▁
+ 92   0           0          0          0             9    ▇▁▁▁▁
+ 93   0           0          0          0.5           8    ▇▁▁▁▁
+ 94   0           0          0          1             1    ▇▁▁▁▅
+ 95   0.693       1.10       1.39       1.61          3.37 ▇▇▃▁▁
+ 96   0           0          0.693      1.10          2.77 ▇▇▂▁▁
+ 97   0           0          0.25       1            49    ▇▁▁▁▁
+ 98   0           0.111      0.25       1             1    ▇▆▃▁▇
+ 99   0.000937    0.444      1          1.78        169    ▇▁▁▁▁
+100 121        1369       2401       3721         11664    ▇▆▂▁▁
+101   0           0          0          1             1    ▇▁▁▁▅
+102   0           0          0          0             1    ▇▁▁▁▁
+103   0           0          0          1             1    ▇▁▁▁▅
+104   0           0          0          0             1    ▇▁▁▁▁
+105   0           0          0          0             1    ▇▁▁▁▁
+106   0           0          1          1             4    ▇▆▃▁▁
+107   0           0          0          0             1    ▇▁▁▁▂
+108   0           0          0          0             1    ▇▁▁▁▁
+109   0           0          0          0             1    ▇▁▁▁▂
+
+
+=== VARIABLES CON MAS DE 10% NAs ===
+
+# A tibble: 0 × 2
+# ℹ 2 variables: variable <chr>, pct_na <dbl>
+
+
+=== MEDIAS POR GRUPO (POBRES vs NO POBRES) ===
+
+# A tibble: 24 × 5
+   variable            `No pobre`   Pobre diferencia ratio
+   <chr>                    <dbl>   <dbl>      <dbl> <dbl>
+ 1 horas_prom             24.6    12.8     -11.8      0.52
+ 2 edad_jefe              50.4    46.8      -3.62     0.93
+ 3 num_personas            3.09    4.15      1.06     1.34
+ 4 n_menores_18            0.721   1.74      1.02     2.41
+ 5 nivel_educ_prom         4.45    3.69     -0.768    0.83
+ 6 nivel_educ_jefe         4.50    3.76     -0.738    0.84
+ 7 nivel_educ_max          5.21    4.71     -0.502    0.9 
+ 8 num_cuartos             3.50    3.04     -0.455    0.87
+ 9 tipo_tenencia           2.36    2.82      0.452    1.19
+10 ratio_depend            0.519   0.878     0.359    1.69
+11 n_ocupados              1.56    1.27     -0.294    0.81
+12 prop_subsidiado         0.320   0.584     0.264    1.83
+13 alguno_subsidio         0.115   0.324     0.209    2.82
+14 prop_cotiza_pension     0.229   0.0269   -0.202    0.12
+15 prop_asalariado         0.242   0.0487   -0.193    0.2 
+16 tasa_ocupacion          0.618   0.428    -0.190    0.69
+17 tasa_desempleo          0.0697  0.163     0.0936   2.34
+18 n_adultos_may           0.337   0.277    -0.0601   0.82
+19 prop_prima_serv         0.901   0.953     0.0521   1.06
+20 prop_mujeres            0.521   0.546     0.0248   1.05
+21 prop_afil_salud         0.947   0.930    -0.0170   0.98
+22 prop_informal           0.260   0.248    -0.0116   0.96
+23 num_cuartos_dorm        1.99    1.98     -0.0106   0.99
+24 alguno_remesas          0.0216  0.0136   -0.00794  0.63
+
+
+=== TOP 20 CORRELACIONES CON POBREZA ===
+
+               variable corr_pobre
+1  subsidiado_x_menores  0.4298068
+2   menores_por_ocupado  0.4125143
+3     menores_x_desocup  0.4003148
+4          n_menores_18  0.3658028
+5          hacinamiento  0.3451463
+6         log_n_menores  0.3434307
+7          prop_menores  0.3336268
+8     hacinamiento_dorm  0.3185876
+9         n_privaciones  0.3090513
+10  prop_cotiza_pension -0.2990514
+11           horas_prom -0.2981149
+12    prop_microempresa  0.2941432
+13         educ_prom_sq -0.2929299
+14    tasa_empleo_total -0.2922902
+15      nivel_educ_prom -0.2884188
+16    prop_contributivo -0.2847066
+17        educ_x_formal -0.2834881
+18      prop_asalariado -0.2831269
+19    indice_formalidad -0.2821459
+20      prop_subsidiado  0.2718002
