@@ -90,7 +90,7 @@ MODEL_ID <- "RF_006"
 
 set.seed(42)
 
-dir_model <- file.path("02_outputs/models/RandomForest", MODEL_ID)
+dir_model <- file.path("02_outputs/models/RandomForest/Balance", MODEL_ID)
 dir_subs  <- "03_submissions"
 reg_path  <- "02_outputs/model_registry.csv"
 
@@ -153,6 +153,40 @@ for (v in c("ciudad", "dpto")) {
   X_train_raw[[v]] <- factor(X_train_raw[[v]], levels = all_levels)
   X_test_raw[[v]]  <- factor(X_test_raw[[v]],  levels = all_levels)
 }
+# -- Variables a excluir --------------------------------------
+#Variables excluidas a mano ya que estas son interacciones que los arboles 
+#por su naturaleza las pueden crear ellos mismos
+#Se excluyen variables cuadráticas, logarítmicas, y de interacción, que no aportan
+
+VARS_EXCLUIR <- c(
+  # Cuadráticas de capital humano (Bloque 3)
+  "educ_jefe_sq",
+  "educ_prom_sq",
+  # Logarítmicas (Bloque 9)
+  "log_num_personas",
+  "log_n_menores",
+  # Cuadráticas generales (Bloque 9)
+  "ratio_depend_sq",
+  "tasa_ocup_sq",
+  "hacinamiento_sq",
+  "edad_jefe_sq",
+  # Interacciones (Bloque 8)
+  "educ_x_formal",
+  "educ_x_ocup",
+  "menores_x_desocup",
+  "depend_x_informal",
+  "rural_x_cta_propia",
+  "educ_x_rural",
+  "subsidiado_x_menores",
+  "jefe_mayor_pension"
+)
+
+# -- Eliminar variables de VARS_EXCLUIR --------------------------------------
+X_train_full <- X_train_full |> select(-any_of(VARS_EXCLUIR))
+X_test_full  <- X_test_full  |> select(-any_of(VARS_EXCLUIR))
+
+message("  Variables excluidas manualmente: ", length(VARS_EXCLUIR))
+message("  Predictores tras exclusión: ", ncol(X_train))
 
 cols_comunes <- intersect(names(X_train_raw), names(X_test_raw))
 X_train      <- X_train_raw |> select(all_of(cols_comunes))

@@ -94,7 +94,7 @@ set.seed(42)
 dir_model     <- file.path("02_outputs/models/LPM/Feature", MODEL_ID)
 dir_subs      <- "03_submissions"
 reg_path      <- "02_outputs/model_registry.csv"
-feat_mat_path <- "02_outputs/models/RandomForest/RF_006/feature_matrix.csv"
+feat_mat_path <- "02_outputs/models/RandomForest/RF_003/feature_matrix.csv"
 
 fs::dir_create(dir_model, recurse = TRUE)
 fs::dir_create(dir_subs,  recurse = TRUE)

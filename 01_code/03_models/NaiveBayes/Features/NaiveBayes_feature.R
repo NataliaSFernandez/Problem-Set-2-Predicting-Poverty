@@ -45,7 +45,7 @@ cat("  Proporcion 1 (pobres):", round(mean(y_train == 1) * 100, 1),
 message("\n== Cargando importancia de RF ==")
 
 rf_imp <- read_csv(
-  "02_outputs/models/RandomForest/RF_001/feature_matrix.csv",
+  "02_outputs/models/RandomForest/RF_003/feature_matrix.csv",
   show_col_types = FALSE
 ) |>
   filter(importancia > 0) |>

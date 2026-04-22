@@ -95,7 +95,7 @@ cat("  Valor 0:", sum(y_train == 0), "| Valor 1:", sum(y_train == 1),
 message("\n== Cargando importancia RF (top-", N_TOP, ") ==")
 
 rf_imp <- read_csv(
-  "02_outputs/models/RandomForest/RF_001/feature_matrix.csv",
+  "02_outputs/models/RandomForest/RF_003/feature_matrix.csv",
   show_col_types = FALSE
 ) |>
   filter(importancia > 0) |>
