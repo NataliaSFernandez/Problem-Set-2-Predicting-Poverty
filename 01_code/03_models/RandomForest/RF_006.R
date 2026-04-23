@@ -153,6 +153,11 @@ for (v in c("ciudad", "dpto")) {
   X_train_raw[[v]] <- factor(X_train_raw[[v]], levels = all_levels)
   X_test_raw[[v]]  <- factor(X_test_raw[[v]],  levels = all_levels)
 }
+
+cols_comunes <- intersect(names(X_train_raw), names(X_test_raw))
+X_train      <- X_train_raw |> select(all_of(cols_comunes))
+X_test       <- X_test_raw  |> select(all_of(cols_comunes))
+
 # -- Variables a excluir --------------------------------------
 #Variables excluidas a mano ya que estas son interacciones que los arboles 
 #por su naturaleza las pueden crear ellos mismos
@@ -182,15 +187,11 @@ VARS_EXCLUIR <- c(
 )
 
 # -- Eliminar variables de VARS_EXCLUIR --------------------------------------
-X_train_full <- X_train_full |> select(-any_of(VARS_EXCLUIR))
-X_test_full  <- X_test_full  |> select(-any_of(VARS_EXCLUIR))
+X_train <- X_train |> select(-any_of(VARS_EXCLUIR))
+X_test <- X_test  |> select(-any_of(VARS_EXCLUIR))
 
 message("  Variables excluidas manualmente: ", length(VARS_EXCLUIR))
 message("  Predictores tras exclusión: ", ncol(X_train))
-
-cols_comunes <- intersect(names(X_train_raw), names(X_test_raw))
-X_train      <- X_train_raw |> select(all_of(cols_comunes))
-X_test       <- X_test_raw  |> select(all_of(cols_comunes))
 
 niveles <- c("No", "Yes")
 y_train <- factor(ifelse(train$pobre == 1, "Yes", "No"), levels = niveles)
