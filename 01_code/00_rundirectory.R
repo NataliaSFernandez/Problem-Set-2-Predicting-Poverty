@@ -121,8 +121,8 @@ run_r_script("01_code/03_models/RandomForest/RF_006.R",
 # gamma, min_child_weight, colsample, subsample, L1, L2.
 # Mejor: spec A (componentes, 75 vars) sin Bogota.
 
-run_r_script("01_code/03_models/XGBoost/XGB_008.R",
-             "PASO 3.6: XGBoost - Mejor modelo (75 vars, sin Bogota)")
+run_r_script("01_code/03_models/XGBoost/run_r_script("01_code/03_models/XGBoost/XGB_007.R",
+             "PASO 3.6: XGBoost - Mejor modelo (93 vars, sin Bogota)")XGB_008.R"
 
 # ================================================================
 # RESUMEN FINAL
