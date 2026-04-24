@@ -94,7 +94,7 @@ Problem-Set-2-Predicting-Poverty/
 |   |   |-- XGBoost/
 |   |-- model_registry.csv            # Tabla resumen de todos los modelos
 |
-|-- 03_submissions/                   # Archivos CSV de predicciones para Kaggle (47)
+|-- 03_submissions/                   # Archivos CSV de predicciones para Kaggle
 |
 |-- renv.lock                         # Ambiente de R para reproducibilidad
 ```
@@ -170,5 +170,4 @@ Mejor modelo de cada algoritmo, ordenados por F1 score:
 ## Competencia Kaggle
 
 - Competencia: Poverty Prediction Challenge (MECA 4107)
-- Submissions totales: 47
 - Mejor F1 público: XGB_008
