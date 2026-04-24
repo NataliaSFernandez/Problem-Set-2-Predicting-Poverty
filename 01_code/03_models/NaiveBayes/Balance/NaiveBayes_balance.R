@@ -20,7 +20,7 @@
 #   Medianas de imputación calculadas SOLO del fold de entrenamiento.
 #
 # VARIABLES:
-#   Top-20 por importancia permutación de RF_001 (feature_matrix.csv).
+#   Top-20 por importancia permutación de RF_006 (feature_matrix.csv).
 #   Ciudad/dpto incluidos si están en el top-20.
 #   Binarias 0/1 tratadas como distribución continua (no convertidas a factor).
 #   usekernel=TRUE, laplace=1 en todos los modelos.
@@ -28,7 +28,7 @@
 # INPUTS:
 #   00_data/processed/train_final.rds
 #   00_data/processed/test_final.rds
-#   02_outputs/models/RandomForest/RF_001/feature_matrix.csv
+#   02_outputs/models/RandomForest/RF_006/feature_matrix.csv
 #
 # OUTPUTS:
 #   02_outputs/models/NB/NB_RF_top20_balance/cv_balance_results.csv
@@ -95,7 +95,7 @@ cat("  Valor 0:", sum(y_train == 0), "| Valor 1:", sum(y_train == 1),
 message("\n== Cargando importancia RF (top-", N_TOP, ") ==")
 
 rf_imp <- read_csv(
-  "02_outputs/models/RandomForest/RF_001/feature_matrix.csv",
+  "02_outputs/models/RandomForest/RF_006/feature_matrix.csv",
   show_col_types = FALSE
 ) |>
   filter(importancia > 0) |>
@@ -688,7 +688,7 @@ nueva_fila <- tibble(
   kaggle_public_F1   = NA_real_,
   threshold          = THRESHOLD,
   notas              = paste0(
-    "NB top-", N_TOP, " vars RF_001. usekernel=TRUE, laplace=1. ",
+    "NB top-", N_TOP, " vars RF_006. usekernel=TRUE, laplace=1. ",
     "Balanceo: comparacion ", length(TECHNIQUES), " tecnicas CV-5. ",
     "Mejor: ", best_technique, " F1_CV5=", round(best_f1_bal, 4), ". ",
     "Threshold=promedio th CV-5 (", round(best_th_cv, 2), "). ",

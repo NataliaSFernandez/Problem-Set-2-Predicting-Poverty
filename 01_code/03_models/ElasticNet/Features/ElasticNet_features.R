@@ -44,7 +44,7 @@ pacman::p_load(
 # -- Rutas -------------------------------------------------------------------
 registry_path   <- "02_outputs/model_registry.csv"
 dir_submissions <- "03_submissions"
-feature_path    <- "02_outputs/models/RandomForest/RF_001/feature_matrix.csv"
+feature_path    <- "02_outputs/models/RandomForest/RF_006/feature_matrix.csv"
 dir_create(dir_submissions, recurse = TRUE)
 
 # -- 1. Carga de datos -------------------------------------------------------

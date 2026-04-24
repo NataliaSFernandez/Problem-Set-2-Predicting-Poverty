@@ -57,7 +57,7 @@ cat("  Esperado: ~20% — si es ~80%, los valores estan invertidos\n")
 VARS_EXCLUIR_A <- c(
   "id", "pobre",
   # Alias directos — misma lógica que LPM_002A
-  "bogota", "doble_ingreso", "brecha_educ",
+  "doble_ingreso", "brecha_educ",
   "indice_formalidad", "vulnerabilidad_lab", "n_fuentes_no_lab",
   "prop_contributivo", "costa_caribe", "region_pacifico", "eje_cafetero",
   "n_privaciones",

@@ -1,0 +1,121 @@
+=== ELASTIC NET --  EN_001A  ===
+
+Predictores: 91 
+alpha: 1 
+lambda: 1e-04 
+Threshold optimo: 0.36 
+F1 OOF: 0.6955 
+Precision OOF: 0.6504 
+Recall OOF: 0.7473 
+AUC-ROC: 0.9232 
+
+-- Confusion Matrix (OOF) --
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     No    Yes
+       No  118673   8344
+       Yes  13263  24680
+                                          
+               Accuracy : 0.869           
+                 95% CI : (0.8674, 0.8706)
+    No Information Rate : 0.7998          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.6126          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.7473          
+            Specificity : 0.8995          
+         Pos Pred Value : 0.6504          
+         Neg Pred Value : 0.9343          
+             Prevalence : 0.2002          
+         Detection Rate : 0.1496          
+   Detection Prevalence : 0.2300          
+      Balanced Accuracy : 0.8234          
+                                          
+       'Positive' Class : Yes             
+                                          
+
+-- Todos los coeficientes no cero --
+               variable  coeficiente
+1     arriendo_estimado -3.840347197
+2       prop_asalariado -1.075795670
+3            horas_prom -0.857222858
+4     prop_contributivo -0.642647241
+5            n_ocupados -0.625727569
+6       prop_pensionado -0.622410651
+7      log_num_personas  0.595824355
+8       num_personas_ug  0.491467608
+9       prop_cta_propia -0.459641644
+10     alguno_arriendos -0.383310962
+11       prop_jornalero -0.380763293
+12        prop_informal  0.374179242
+13      prop_prima_serv -0.352900863
+14                 zona -0.324936014
+15  vivienda_propia_pag -0.308380929
+16    prop_gran_empresa -0.289946584
+17       prop_domestico -0.283856577
+18          prop_patron -0.257187754
+19          n_inactivos -0.242544209
+20      nivel_educ_prom -0.230209833
+21          num_cuartos -0.228945085
+22  prop_cotiza_pension -0.211169332
+23    prop_microempresa  0.190703002
+24      region_pacifico  0.177659545
+25    tenencia_insegura -0.174684114
+26    alguno_transf_nac -0.173912915
+27      prop_sub_transp -0.165595394
+28    valor_alojamiento -0.163300842
+29     prop_fam_sin_rem  0.156151292
+30         sin_ocupados -0.155101410
+31   rural_x_cta_propia  0.154327966
+32        prop_sub_alim -0.153960619
+33  menores_por_ocupado  0.150630774
+34       prop_subempleo  0.148128689
+35   educ_superior_jefe -0.133387334
+36      prop_2do_empleo -0.131371984
+37      antiguedad_alta -0.127393802
+38         hacinamiento  0.119892098
+39        tipo_tenencia  0.111488043
+40         prop_menores  0.109750333
+41       alguno_agropec -0.102855311
+42            edad_prom -0.102032015
+43        log_n_menores -0.098178181
+44       nivel_educ_max -0.092502689
+45       alguno_remesas -0.090701235
+46       n_desempleados -0.085454781
+47      un_solo_ocupado  0.079036764
+48   hogar_monoparental  0.076694280
+49      nivel_educ_jefe -0.068714643
+50         ratio_depend -0.068462830
+51        n_adultos_may -0.068243890
+52           cuartos_pc -0.065079475
+53      ratio_depend_sq  0.064308667
+54   alguno_pension_jub  0.063574000
+55         educ_jefe_sq -0.060243780
+56      alguno_subsidio  0.058217339
+57    depend_x_informal  0.057730215
+58      hacinamiento_sq -0.053395230
+59         eje_cafetero -0.052959937
+60       tasa_desempleo  0.047415802
+61    menores_x_desocup  0.045954121
+62     alguno_intereses -0.039414881
+63     ingresos_activos -0.038666079
+64     educ_media_o_mas  0.037096195
+65      antiguedad_prom  0.036281334
+66          educ_x_ocup -0.034857131
+67   rural_costa_caribe -0.033591313
+68    hacinamiento_dorm  0.031694724
+69         prop_mujeres  0.030155055
+70     alguno_cesantias -0.021532747
+71 subsidiado_x_menores  0.020749598
+72         costa_caribe  0.018810802
+73   jefe_mayor_pension -0.018013087
+74         tasa_ocup_sq  0.017096511
+75      arriendo_pagado  0.007903529
+76         edad_jefe_sq -0.007333105
+77      prop_subsidiado  0.003700636
+78         educ_x_rural -0.001628523
+79           mujer_jefa  0.001257035

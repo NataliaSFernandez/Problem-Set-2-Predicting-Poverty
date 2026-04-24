@@ -102,7 +102,7 @@ vars_indices <- c(
 )
 
 vars_componentes <- c(
-  "zona", "bogota", "costa_caribe", "region_pacifico", "eje_cafetero",
+  "zona", "costa_caribe", "region_pacifico", "eje_cafetero",
   "rural_costa_caribe", "rural_x_cta_propia", "educ_x_rural",
   "prop_contributivo", "prop_cotiza_pension", "prop_prima_serv",
   "prop_asalariado", "prop_sub_transp", "prop_sub_alim",

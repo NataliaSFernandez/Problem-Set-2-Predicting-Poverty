@@ -720,15 +720,6 @@ construir_nuevas_variables <- function(df) {
         alguno_arriendos   == 1 | alguno_agropec    == 1
       ),
 
-      # Depende exclusivamente de subsidios estatales (fuente más precaria)
-      solo_subsidio        = as.integer(
-        alguno_subsidio    == 1 &
-        alguno_pension_jub == 0 &
-        alguno_remesas     == 0 &
-        alguno_intereses   == 0 &
-        alguno_arriendos   == 0
-      ),
-
       # Tiene ingresos de activos: intereses o arrendamientos (capital acumulado)
       ingresos_activos     = as.integer(
         alguno_intereses == 1 | alguno_arriendos == 1
@@ -772,7 +763,9 @@ construir_nuevas_variables <- function(df) {
 
       # Región Pacífica (excluye Cali — Valle del Cauca)
       region_pacifico      = as.integer(dpto %in% c("19", "27", "52")),
-
+      # Bogotá: se construye pero se excluirá en el paso 10 (vars_excluir_ambos)
+      # porque los hogares de Bogotá son eliminados en el paso 12.3 por no estar
+      # en test. La columna queda con varianza cero y no aporta información.
       # Bogotá D.C.: menor pobreza por concentración de empleo formal
       bogota               = as.integer(dpto == "11"),
 
@@ -917,7 +910,7 @@ vars_excluir_ambos <- c(
   # estrato_hog, estrato_bajo y estrato_x_zona son NA en el 100% de las filas
   # de test porque estrato no está disponible en test_personas.csv.
   # Se excluyen de ambos datasets para que los modelos no las usen.
-  "estrato_hog", "estrato_bajo", "estrato_x_zona"
+  "estrato_hog", "estrato_bajo", "estrato_x_zona","bogota"
 )
 
 vars_excluir_solo_train <- c(
@@ -975,6 +968,50 @@ message("  train_final: ", nrow(train_model), " x ", ncol(train_model),
         "  (", n_pobres, " pobres / ", n_no_pobres, " no pobres | ",
         prevalencia, "% prevalencia)")
 message("  test_final:  ", nrow(test_model), " x ", ncol(test_model))
+
+# -- 12.3  Alineación: eliminar de train los hogares con niveles exclusivos --
+#
+#  Justificación: un nivel presente en train pero ausente en test no puede
+#  evaluarse en producción. Se eliminan directamente del set de entrenamiento.
+#  Así ambos splits quedan con exactamente los mismos dominios.
+#
+#  Si NO hay asimetría, este bloque no modifica nada.
+if (length(solo_en_train_ciudad) > 0) {
+  n_antes <- nrow(train_model)
+
+  message("\n  Eliminando de train los hogares con ciudad exclusiva de train...")
+  message("  Ciudades a eliminar: ", paste(solo_en_train_ciudad, collapse = ", "))
+
+  train_model <- train_model |>
+    filter(!as.character(ciudad) %in% solo_en_train_ciudad) |>
+    mutate(ciudad = factor(as.character(ciudad)))   # elimina niveles vacíos
+
+  # Forzar los mismos niveles en test
+  test_model <- test_model |>
+    mutate(ciudad = factor(as.character(ciudad),
+                           levels = levels(train_model$ciudad)))
+
+  n_despues   <- nrow(train_model)
+  n_eliminado <- n_antes - n_despues
+
+  message("  Filas eliminadas de train: ", n_eliminado,
+          " (", scales::percent(n_eliminado / n_antes, accuracy = 0.1), " del total)")
+  message("  train_model resultante:    ", n_despues, " filas")
+  message("  Niveles finales de 'ciudad' (", nlevels(train_model$ciudad), "):")
+  message("    ", paste(sort(levels(train_model$ciudad)), collapse = ", "))
+  message("  Todos los niveles de test cubiertos en train: ",
+          all(levels(test_model$ciudad) %in% levels(train_model$ciudad)))
+
+  # Sobreescribir los .rds y .csv con la versión alineada
+  message("\n  Guardando versión alineada...")
+  saveRDS(train_model, file.path(dir_processed, "train_final.rds"))
+  saveRDS(test_model,  file.path(dir_processed, "test_final.rds"))
+  write_csv(train_model, file.path(dir_processed, "train_final.csv"))
+  write_csv(test_model,  file.path(dir_processed, "test_final.csv"))
+  message("  Guardado OK (train_final y test_final sobreescritos con alineacion).")
+} else {
+  message("  No se requiere eliminacion.")
+}
 
 # -- Uso en scripts posteriores ---------------------------------------------
 # train <- readRDS("00_data/processed/train_final.rds")
