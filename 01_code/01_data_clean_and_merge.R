@@ -976,6 +976,7 @@ message("  test_final:  ", nrow(test_model), " x ", ncol(test_model))
 #  Así ambos splits quedan con exactamente los mismos dominios.
 #
 #  Si NO hay asimetría, este bloque no modifica nada.
+solo_en_train_ciudad <- setdiff(levels(train_model$ciudad), levels(test_model$ciudad))
 if (length(solo_en_train_ciudad) > 0) {
   n_antes <- nrow(train_model)
 

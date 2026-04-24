@@ -1,9 +1,9 @@
 === RESUMEN DESCRIPTIVO GENERAL ===
 
-Hogares: 164960 
-Predictores: 111 (excluyendo id y pobre)
-Prevalencia pobreza: 20 %
-Ratio No pobre : Pobre = 4 : 1
+Hogares: 154393 
+Predictores: 109 (excluyendo id y pobre)
+Prevalencia pobreza: 20.7 %
+Ratio No pobre : Pobre = 3.8 : 1
 
 
 === POBREZA POR ZONA ===
@@ -12,12 +12,12 @@ Ratio No pobre : Pobre = 4 : 1
   zona_lab      n pobres  tasa
   <chr>     <int>  <dbl> <dbl>
 1 Rural     15472   4648  30.0
-2 Urbano   149488  28376  19.0
+2 Urbano   138921  27345  19.7
 
 
 === POBREZA POR DEPARTAMENTO ===
 
-# A tibble: 24 × 3
+# A tibble: 23 × 3
    dpto      n  tasa
    <fct> <int> <dbl>
  1 27     5501  37.0
@@ -30,7 +30,7 @@ Ratio No pobre : Pobre = 4 : 1
  8 52     6472  24.4
  9 70     6558  23.8
 10 23     5966  23.7
-# ℹ 14 more rows
+# ℹ 13 more rows
 
 
 === MEDIAS POR GRUPO (POBRES vs NO POBRES) ===
@@ -38,48 +38,48 @@ Ratio No pobre : Pobre = 4 : 1
 # A tibble: 25 × 5
    variable            `No pobre`   Pobre diferencia ratio
    <chr>                    <dbl>   <dbl>      <dbl> <dbl>
- 1 antiguedad_prom        50.0    28.3     -21.7      0.57
- 2 horas_prom             24.8    12.7     -12.1      0.51
- 3 edad_jefe              50.3    46.8      -3.55     0.93
- 4 num_personas            3.08    4.13      1.05     1.34
- 5 n_menores_18            0.715   1.73      1.02     2.42
- 6 menores_por_ocupado     0.455   1.33      0.878    2.93
- 7 nivel_educ_prom         4.47    3.69     -0.778    0.83
- 8 nivel_educ_jefe         4.52    3.77     -0.744    0.84
- 9 hacinamiento            0.948   1.53      0.580    1.61
-10 cuartos_pc              1.42    0.898    -0.522    0.63
-11 nivel_educ_max          5.22    4.71     -0.511    0.9 
-12 num_cuartos             3.48    3.03     -0.449    0.87
-13 ratio_depend            0.515   0.875     0.361    1.7 
-14 n_ocupados              1.57    1.26     -0.309    0.8 
-15 prop_contributivo       0.640   0.350    -0.289    0.55
-16 prop_subsidiado         0.306   0.577     0.271    1.89
-17 tasa_empleo_total       0.545   0.311    -0.234    0.57
-18 prop_cotiza_pension     0.237   0.0276   -0.209    0.12
-19 alguno_subsidio         0.109   0.318     0.209    2.91
-20 prop_asalariado         0.250   0.0499   -0.200    0.2 
-21 tasa_ocupacion          0.621   0.426    -0.195    0.69
-22 tasa_desempleo          0.0696  0.166     0.0968   2.39
-23 prop_mujeres            0.521   0.546     0.0247   1.05
-24 prop_informal           0.255   0.246    -0.00870  0.97
-25 alguno_remesas          0.0209  0.0137   -0.00719  0.66
+ 1 antiguedad_prom        50.9    28.6     -22.2      0.56
+ 2 horas_prom             24.6    12.8     -11.8      0.52
+ 3 edad_jefe              50.4    46.8      -3.62     0.93
+ 4 num_personas            3.09    4.15      1.06     1.34
+ 5 n_menores_18            0.721   1.74      1.02     2.41
+ 6 menores_por_ocupado     0.461   1.34      0.876    2.9 
+ 7 nivel_educ_prom         4.45    3.69     -0.768    0.83
+ 8 nivel_educ_jefe         4.50    3.76     -0.738    0.84
+ 9 hacinamiento            0.943   1.53      0.585    1.62
+10 cuartos_pc              1.43    0.898    -0.530    0.63
+11 nivel_educ_max          5.21    4.71     -0.502    0.9 
+12 num_cuartos             3.50    3.04     -0.455    0.87
+13 ratio_depend            0.519   0.878     0.359    1.69
+14 n_ocupados              1.56    1.27     -0.294    0.81
+15 prop_contributivo       0.627   0.346    -0.281    0.55
+16 prop_subsidiado         0.320   0.584     0.264    1.83
+17 tasa_empleo_total       0.542   0.313    -0.229    0.58
+18 alguno_subsidio         0.115   0.324     0.209    2.82
+19 prop_cotiza_pension     0.229   0.0269   -0.202    0.12
+20 prop_asalariado         0.242   0.0487   -0.193    0.2 
+21 tasa_ocupacion          0.618   0.428    -0.190    0.69
+22 tasa_desempleo          0.0697  0.163     0.0936   2.34
+23 prop_mujeres            0.521   0.546     0.0248   1.05
+24 prop_informal           0.260   0.248    -0.0116   0.96
+25 alguno_remesas          0.0216  0.0136   -0.00794  0.63
 
 
 === TOP 15 CORRELACIONES CON POBREZA ===
 
                variable corr_pobre
-1  subsidiado_x_menores  0.4301036
-2   menores_por_ocupado  0.4123474
-3     menores_x_desocup  0.4011933
-4          n_menores_18  0.3633909
-5         log_n_menores  0.3400976
-6          hacinamiento  0.3400607
-7          prop_menores  0.3307981
-8     hacinamiento_dorm  0.3158209
-9         n_privaciones  0.3093905
-10  prop_cotiza_pension -0.3003374
-11           horas_prom -0.2985500
-12    prop_microempresa  0.2955900
-13    tasa_empleo_total -0.2935376
-14         educ_prom_sq -0.2927804
-15      nivel_educ_prom -0.2892489
+1  subsidiado_x_menores  0.4298068
+2   menores_por_ocupado  0.4125143
+3     menores_x_desocup  0.4003148
+4          n_menores_18  0.3658028
+5          hacinamiento  0.3451463
+6         log_n_menores  0.3434307
+7          prop_menores  0.3336268
+8     hacinamiento_dorm  0.3185876
+9         n_privaciones  0.3090513
+10  prop_cotiza_pension -0.2990514
+11           horas_prom -0.2981149
+12    prop_microempresa  0.2941432
+13         educ_prom_sq -0.2929299
+14    tasa_empleo_total -0.2922902
+15      nivel_educ_prom -0.2884188
