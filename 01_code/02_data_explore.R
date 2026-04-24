@@ -1,467 +1,424 @@
-
 #==============================================================================
 # PROBLEM SET 2: PREDICTING POVERTY
-# Script 02: Análisis Exploratorio de Datos (EDA)
+# Script 02: Analisis Exploratorio de Datos (EDA)
 #==============================================================================
 # OBJETIVO: Explorar los datos limpios para entender la estructura del problema,
 #           identificar variables informativas y guiar el modelado.
 #
 # INPUT:  00_data/processed/train_final.rds
-#         00_data/processed/test_final.rds
 #
-# OUTPUT: Gráficos y tablas que responden las 3 preguntas de Fase 1:
-#   1. ¿Qué variables deberían predecir pobreza según razonamiento económico?
-#   2. ¿Qué patrones en los datos confirman o desafían esas hipótesis?
-#   3. ¿Qué tan severo es el desbalance de clases y qué implica para el modelado?
+# OUTPUT: 02_outputs/figures/data_explore/
+#         - 9 graficos PNG para slides
+#         - resultados_eda.txt con tablas de metricas
 #
+# Group 04
 #==============================================================================
 
 # ==============================================================================
 # BLOQUE 0: PAQUETES Y DATOS
 # ==============================================================================
-# Cargamos los paquetes que necesitamos:
-# - tidyverse: para manipular datos y hacer gráficos con ggplot2
-# - corrplot: para visualizar la matriz de correlaciones
-# - skimr: para un resumen rápido de todas las variables
-
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
-  tidyverse,   # manipulación de datos + ggplot2
-  corrplot,    # visualización de correlaciones
-  skimr,       # resumen rápido de dataframes
-  scales,       # formateo de ejes en gráficos
-  fs           # manejo de archivos y directorios
+  tidyverse,
+  corrplot,
+  skimr,
+  scales
 )
 
-# Cargamos los datos limpios que generó Natalia en el script 01
-dir_processed <- "00_data/processed"
-dir_figures   <- "02_outputs/figures"
-fs::dir_create(dir_figures, recurse = TRUE)
-train <- readRDS(file.path(dir_processed, "train_final.rds"))
-test  <- readRDS(file.path(dir_processed, "test_final.rds"))
+# Carpeta de salida
+dir_figures <- "02_outputs/figures/data_explore"
+if (!dir.exists(dir_figures)) dir.create(dir_figures, recursive = TRUE)
 
-# Convertimos 'pobre' a factor con etiquetas legibles para los gráficos
-# 0 = No pobre, 1 = Pobre
+# Cargar datos
+train <- readRDS("00_data/processed/train_final.rds")
+
 train <- train |>
   mutate(pobre_f = factor(pobre, levels = c(0, 1), labels = c("No pobre", "Pobre")))
 
 cat("Train:", nrow(train), "hogares |", ncol(train), "columnas\n")
-cat("Test: ", nrow(test),  "hogares |", ncol(test),  "columnas\n")
+
+# Paleta consistente para todos los graficos
+COL_NO <- "#2E86AB"
+COL_SI <- "#E84855"
+
+# Tema base para todos los graficos (fondo blanco, limpio)
+tema_base <- theme_minimal(base_size = 13) +
+  theme(
+    plot.background  = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA),
+    panel.grid.minor = element_blank(),
+    plot.title       = element_text(face = "bold", size = 14),
+    plot.subtitle    = element_text(color = "grey40", size = 11)
+  )
 
 
 # ==============================================================================
-# BLOQUE 1: DESBALANCE DE CLASES
+# GRAFICO 1: DESBALANCE DE CLASES
 # ==============================================================================
-# Pregunta 3 del plan: ¿Qué tan severo es el desbalance y qué implica?
-#
-# ¿Por qué importa? Si el 80% de hogares NO son pobres, un modelo que
-# simplemente diga "nadie es pobre" tendría 80% de accuracy. Pero no
-# identificaría a ningún hogar pobre — su recall sería 0.
-# El F1 score (que usa Kaggle) penaliza esto porque necesita TANTO
-# precisión COMO recall. Así que tenemos que prestarle atención especial
-# a la clase minoritaria (pobres).
+# Contexto: el 80% de hogares NO son pobres. Esto justifica el uso de F1
+# en vez de accuracy, y la necesidad de optimizar el threshold.
 
-cat("\n========================================\n")
-cat("BLOQUE 1: DESBALANCE DE CLASES\n")
-cat("========================================\n")
+cat("\n== Grafico 1: Desbalance de clases ==\n")
 
-tabla_pobre <- train %>%
-  count(pobre_f) %>%
+tabla_pobre <- train |>
+  count(pobre_f) |>
   mutate(
     porcentaje = round(n / sum(n) * 100, 1),
     etiqueta   = paste0(format(n, big.mark = ","), " (", porcentaje, "%)")
   )
 
 print(tabla_pobre)
-cat("\nRatio No pobre : Pobre =",
+cat("Ratio No pobre : Pobre =",
     round(tabla_pobre$n[1] / tabla_pobre$n[2], 1), ": 1\n")
 
-# Gráfico de barras del desbalance
 ggplot(tabla_pobre, aes(x = pobre_f, y = n, fill = pobre_f)) +
   geom_col(width = 0.6) +
-  geom_text(aes(label = etiqueta), vjust = -0.5, size = 4) +
+  geom_text(aes(label = etiqueta), vjust = -0.5, size = 4.5) +
   scale_y_continuous(labels = comma, expand = expansion(mult = c(0, 0.15))) +
-  scale_fill_manual(values = c("No pobre" = "#2E86AB", "Pobre" = "#E84855")) +
+  scale_fill_manual(values = c("No pobre" = COL_NO, "Pobre" = COL_SI)) +
   labs(
-    title    = "Distribución de la variable objetivo",
-    subtitle = "Desbalance 4:1 — la clase 'Pobre' es minoritaria",
-    x = NULL, y = "Número de hogares"
+    title    = "Distribucion de la variable objetivo",
+    subtitle = "Desbalance 4:1 entre hogares no pobres y pobres",
+    x = NULL, y = "Numero de hogares"
   ) +
-  theme_minimal(base_size = 13) +
+  tema_base +
   theme(legend.position = "none")
 
-ggsave(file.path(dir_figures, "01_desbalance_clases.png"), width = 7, height = 5, dpi = 150)
+ggsave(file.path(dir_figures, "01_desbalance_clases.png"),
+       width = 7, height = 5, dpi = 200)
 
 
 # ==============================================================================
-# BLOQUE 2: RESUMEN DESCRIPTIVO GENERAL
+# GRAFICO 2: POBREZA POR ZONA (URBANO vs RURAL)
 # ==============================================================================
-# Aquí vemos un panorama rápido de todas las variables: medias, medianas,
-# valores faltantes, distribución. Esto nos ayuda a detectar problemas
-# (variables con demasiados NAs, distribuciones extrañas, etc.)
+# La pobreza rural es estructuralmente mayor por menor acceso a mercados
+# laborales formales, servicios publicos y educacion.
 
-cat("\n========================================\n")
-cat("BLOQUE 2: RESUMEN DESCRIPTIVO GENERAL\n")
-cat("========================================\n")
+cat("\n== Grafico 2: Pobreza por zona ==\n")
 
-# Seleccionamos solo las variables numéricas (excluyendo id y pobre_f)
-vars_numericas <- train %>%
-  select(where(is.numeric), -pobre) %>%
-  names()
-
-cat("Variables numéricas disponibles:", length(vars_numericas), "\n\n")
-
-# Resumen rápido con skimr
-skim_result <- train %>%
-  select(all_of(vars_numericas), pobre) %>%
-  skim()
-
-print(skim_result)
-
-# Variables con muchos NAs (más del 10%)
-vars_na <- train %>%
-  summarise(across(all_of(vars_numericas), ~ mean(is.na(.)) * 100)) %>%
-  pivot_longer(everything(), names_to = "variable", values_to = "pct_na") %>%
-  filter(pct_na > 10) %>%
-  arrange(desc(pct_na))
-
-cat("\n-- Variables con más de 10% de NAs --\n")
-print(vars_na)
-cat("\nNota: arriendo_pagado tiene 96.6% NA porque solo aplica a hogares que arriendan.\n")
-cat("horas_prom y prop_cta_propia tienen ~13.5% NA (hogares sin nadie en PET).\n")
-
-
-# ==============================================================================
-# BLOQUE 3: DIFERENCIAS ENTRE POBRES Y NO POBRES
-# ==============================================================================
-# Pregunta 1 y 2: ¿Qué variables predicen pobreza y qué muestran los datos?
-#
-# La intuición económica nos dice que la pobreza se asocia con:
-# - Menor educación (del jefe y del hogar en general)
-# - Menor tasa de ocupación / mayor desempleo
-# - Mayor informalidad laboral
-# - Más dependientes (menores, adultos mayores) por persona en edad productiva
-# - Menor acceso a seguridad social (pensión, salud contributiva)
-# - Hogares más grandes con hacinamiento
-#
-# Vamos a verificar si los datos confirman esto.
-
-cat("\n========================================\n")
-cat("BLOQUE 3: COMPARACIÓN POBRES vs NO POBRES\n")
-cat("========================================\n")
-
-# Seleccionamos variables clave para la comparación
-vars_comparar <- c(
-  # Vivienda
-  "num_cuartos", "num_cuartos_dorm", "tipo_tenencia",
-  # Demografía
-  "num_personas", "n_menores_18", "n_adultos_may",
-  "edad_jefe", "prop_mujeres", "ratio_depend",
-  # Educación
-  "nivel_educ_max", "nivel_educ_jefe", "nivel_educ_prom",
-  # Mercado laboral
-  "n_ocupados", "tasa_ocupacion", "tasa_desempleo",
-  "prop_asalariado", "prop_informal",
-  # Seguridad social
-  "prop_afil_salud", "prop_subsidiado", "prop_cotiza_pension",
-  # Otras
-  "prop_prima_serv", "alguno_subsidio", "alguno_remesas",
-  "horas_prom"
-)
-
-# Tabla de medias por grupo
-tabla_medias <- train %>%
-  group_by(pobre_f) %>%
+zona_pobre <- train |>
+  mutate(zona_lab = ifelse(zona == 1, "Urbano", "Rural")) |>
+  group_by(zona_lab) |>
   summarise(
-    across(all_of(vars_comparar), ~ mean(.x, na.rm = TRUE)),
+    n = n(),
+    pobres = sum(pobre),
+    tasa = mean(pobre) * 100,
     .groups = "drop"
-  ) %>%
-  pivot_longer(-pobre_f, names_to = "variable", values_to = "media") %>%
-  pivot_wider(names_from = pobre_f, values_from = media) %>%
-  mutate(
-    diferencia = Pobre - `No pobre`,
-    ratio      = round(Pobre / `No pobre`, 2)
-  ) %>%
-  arrange(desc(abs(diferencia)))
+  )
 
-cat("\n-- Medias por grupo (ordenadas por diferencia absoluta) --\n")
-print(tabla_medias, n = 30)
+print(zona_pobre)
+
+train |>
+  mutate(zona_lab = factor(ifelse(zona == 1, "Urbano", "Rural"),
+                            levels = c("Urbano", "Rural"))) |>
+  ggplot(aes(x = zona_lab, fill = pobre_f)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = percent) +
+  scale_fill_manual(values = c("No pobre" = COL_NO, "Pobre" = COL_SI)) +
+  labs(
+    title    = "Tasa de pobreza por zona",
+    subtitle = "La pobreza rural duplica la urbana por menor acceso a empleo formal",
+    x = NULL, y = "Proporcion", fill = NULL
+  ) +
+  tema_base +
+  theme(legend.position = "bottom")
+
+ggsave(file.path(dir_figures, "02_pobreza_zona.png"),
+       width = 7, height = 5, dpi = 200)
 
 
 # ==============================================================================
-# BLOQUE 4: CORRELACIONES CON LA VARIABLE OBJETIVO
+# GRAFICO 3: POBREZA POR DEPARTAMENTO
 # ==============================================================================
-# Calculamos la correlación de Pearson de cada variable numérica con 'pobre'.
-# Valores positivos = a más de esa variable, más probabilidad de ser pobre.
-# Valores negativos = a más de esa variable, menos probabilidad de ser pobre.
+# La pobreza tiene un componente geografico fuerte en Colombia.
+# Departamentos como Choco y La Guajira tienen tasas mucho mayores
+# que Bogota o Antioquia.
 
-cat("\n========================================\n")
-cat("BLOQUE 4: CORRELACIONES CON 'pobre'\n")
-cat("========================================\n")
+cat("\n== Grafico 3: Pobreza por departamento ==\n")
 
-# Calculamos correlación solo con variables sin demasiados NAs
-vars_para_corr <- train %>%
-  select(all_of(vars_numericas)) %>%
-  select(where(~ mean(is.na(.)) < 0.15)) %>%
+dpto_pobre <- train |>
+  group_by(dpto) |>
+  summarise(
+    n = n(),
+    tasa = mean(pobre) * 100,
+    .groups = "drop"
+  ) |>
+  arrange(desc(tasa))
+
+print(dpto_pobre)
+
+dpto_pobre |>
+  mutate(dpto = fct_reorder(as.character(dpto), tasa)) |>
+  ggplot(aes(x = dpto, y = tasa / 100, fill = tasa)) +
+  geom_col(width = 0.7) +
+  coord_flip() +
+  scale_y_continuous(labels = percent) +
+  scale_fill_gradient(low = COL_NO, high = COL_SI, guide = "none") +
+  labs(
+    title    = "Tasa de pobreza por departamento",
+    subtitle = "Heterogeneidad geografica: la pobreza varia hasta 5x entre departamentos",
+    x = NULL, y = "Tasa de pobreza"
+  ) +
+  tema_base
+
+ggsave(file.path(dir_figures, "03_pobreza_dpto.png"),
+       width = 8, height = 7, dpi = 200)
+
+
+# ==============================================================================
+# GRAFICO 4: EDUCACION DEL JEFE vs POBREZA
+# ==============================================================================
+# Capital humano es el determinante mas fuerte de ingreso y de pobreza.
+# Mayor educacion del jefe = mayor capacidad de generar ingreso = menor pobreza.
+# Escala: 1=Ninguno, 2=Preescolar, 3=Primaria, 4=Secundaria, 5=Media, 6=Superior
+
+cat("\n== Grafico 4: Educacion del jefe vs pobreza ==\n")
+
+educ_labels <- c("1\nNinguno", "2\nPreescolar", "3\nPrimaria",
+                  "4\nSecundaria", "5\nMedia", "6\nSuperior")
+
+train |>
+  filter(nivel_educ_jefe %in% 1:6) |>
+  ggplot(aes(x = factor(nivel_educ_jefe), fill = pobre_f)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = percent) +
+  scale_x_discrete(labels = educ_labels) +
+  scale_fill_manual(values = c("No pobre" = COL_NO, "Pobre" = COL_SI)) +
+  labs(
+    title    = "Pobreza segun nivel educativo del jefe de hogar",
+    subtitle = "Cada nivel adicional de educacion reduce la probabilidad de pobreza",
+    x = "Nivel educativo del jefe", y = "Proporcion", fill = NULL
+  ) +
+  tema_base +
+  theme(legend.position = "bottom")
+
+ggsave(file.path(dir_figures, "04_educ_jefe_vs_pobre.png"),
+       width = 8, height = 5, dpi = 200)
+
+
+# ==============================================================================
+# GRAFICO 5: FORMALIDAD LABORAL vs POBREZA
+# ==============================================================================
+# La informalidad atrapa a los hogares en ingresos bajos e inestables,
+# sin acceso a seguridad social. prop_contributivo mide la proporcion
+# de miembros en regimen contributivo de salud (proxy de empleo formal).
+
+cat("\n== Grafico 5: Formalidad laboral vs pobreza ==\n")
+
+ggplot(train, aes(x = pobre_f, y = prop_contributivo, fill = pobre_f)) +
+  geom_boxplot(outlier.alpha = 0.1, width = 0.5) +
+  scale_fill_manual(values = c("No pobre" = COL_NO, "Pobre" = COL_SI)) +
+  labs(
+    title    = "Proporcion en regimen contributivo de salud",
+    subtitle = "Los hogares pobres casi no tienen miembros con empleo formal",
+    x = NULL, y = "Proporcion en regimen contributivo", fill = NULL
+  ) +
+  tema_base +
+  theme(legend.position = "none")
+
+ggsave(file.path(dir_figures, "05_formalidad_vs_pobre.png"),
+       width = 7, height = 5, dpi = 200)
+
+
+# ==============================================================================
+# GRAFICO 6: CARGA DE DEPENDIENTES vs POBREZA
+# ==============================================================================
+# Mas dependientes (menores) por trabajador = menos ingreso per capita.
+# Es una trampa de pobreza: hogares pobres tienen mas hijos,
+# lo que reduce su ingreso per capita y los mantiene pobres.
+
+cat("\n== Grafico 6: Carga de dependientes ==\n")
+
+ggplot(train, aes(x = pobre_f, y = menores_por_ocupado, fill = pobre_f)) +
+  geom_boxplot(outlier.alpha = 0.1, width = 0.5) +
+  scale_fill_manual(values = c("No pobre" = COL_NO, "Pobre" = COL_SI)) +
+  coord_cartesian(ylim = c(0, 5)) +
+  labs(
+    title    = "Menores por persona ocupada en el hogar",
+    subtitle = "Los hogares pobres sostienen mas dependientes por cada trabajador",
+    x = NULL, y = "Menores de 18 / Ocupados", fill = NULL
+  ) +
+  tema_base +
+  theme(legend.position = "none")
+
+ggsave(file.path(dir_figures, "06_menores_por_ocupado.png"),
+       width = 7, height = 5, dpi = 200)
+
+
+# ==============================================================================
+# GRAFICO 7: HACINAMIENTO vs POBREZA
+# ==============================================================================
+# Condiciones de vivienda como proxy de bienestar y acumulacion de activos.
+# Menos cuartos per capita = mayor hacinamiento = mayor pobreza.
+
+cat("\n== Grafico 7: Hacinamiento ==\n")
+
+ggplot(train, aes(x = pobre_f, y = cuartos_pc, fill = pobre_f)) +
+  geom_boxplot(outlier.alpha = 0.1, width = 0.5) +
+  scale_fill_manual(values = c("No pobre" = COL_NO, "Pobre" = COL_SI)) +
+  coord_cartesian(ylim = c(0, 4)) +
+  labs(
+    title    = "Cuartos per capita por condicion de pobreza",
+    subtitle = "Los hogares pobres viven en condiciones de mayor hacinamiento",
+    x = NULL, y = "Cuartos per capita", fill = NULL
+  ) +
+  tema_base +
+  theme(legend.position = "none")
+
+ggsave(file.path(dir_figures, "07_hacinamiento.png"),
+       width = 7, height = 5, dpi = 200)
+
+
+# ==============================================================================
+# GRAFICO 8: TOP 15 CORRELACIONES CON POBREZA
+# ==============================================================================
+# Las variables mas correlacionadas con pobreza guian la seleccion de
+# predictores para el modelado.
+
+cat("\n== Grafico 8: Top 15 correlaciones ==\n")
+
+vars_numericas <- train |>
+  select(where(is.numeric), -pobre) |>
+  select(where(~ mean(is.na(.)) < 0.15)) |>
   names()
 
-correlaciones <- train %>%
-  select(pobre, all_of(vars_para_corr)) %>%
-  cor(use = "pairwise.complete.obs") %>%
-  as.data.frame() %>%
-  rownames_to_column("variable") %>%
-  select(variable, corr_pobre = pobre) %>%
-  filter(variable != "pobre") %>%
+correlaciones <- train |>
+  select(pobre, all_of(vars_numericas)) |>
+  cor(use = "pairwise.complete.obs") |>
+  as.data.frame() |>
+  rownames_to_column("variable") |>
+  select(variable, corr_pobre = pobre) |>
+  filter(variable != "pobre") |>
   arrange(desc(abs(corr_pobre)))
 
-cat("\n-- Top 20 variables más correlacionadas con pobreza --\n")
-print(head(correlaciones, 20))
+cat("Top 15 correlaciones:\n")
+print(head(correlaciones, 15))
 
-# Gráfico de barras de correlaciones (top 20)
-top_corr <- head(correlaciones, 20)
+top_corr <- head(correlaciones, 15)
 
 ggplot(top_corr, aes(x = reorder(variable, corr_pobre), y = corr_pobre,
                       fill = corr_pobre > 0)) +
   geom_col(width = 0.7) +
   coord_flip() +
-  scale_fill_manual(values = c("TRUE" = "#E84855", "FALSE" = "#2E86AB"),
-                  labels = c("TRUE" = "Aumenta pobreza", "FALSE" = "Reduce pobreza"))+
+  scale_fill_manual(values = c("TRUE" = COL_SI, "FALSE" = COL_NO),
+                    labels = c("Reduce pobreza", "Aumenta pobreza")) +
   labs(
-    title    = "Correlación de cada variable con la pobreza",
-    subtitle = "Top 20 variables más asociadas (correlación de Pearson)",
-    x = NULL, y = "Correlación con 'pobre'",
-    fill = NULL
+    title    = "Correlacion de cada variable con pobreza",
+    subtitle = "Top 15 predictores por correlacion de Pearson",
+    x = NULL, y = "Correlacion con pobre", fill = NULL
   ) +
-  theme_minimal(base_size = 12) +
+  tema_base +
   theme(legend.position = "bottom")
 
-ggsave(file.path(dir_figures, "02_correlaciones_pobre.png"), width = 8, height = 7, dpi = 150)
+ggsave(file.path(dir_figures, "08_correlaciones_pobre.png"),
+       width = 8, height = 6, dpi = 200)
 
 
 # ==============================================================================
-# BLOQUE 5: VISUALIZACIONES CLAVE
+# GRAFICO 9: MATRIZ DE CORRELACIONES ENTRE PREDICTORES
 # ==============================================================================
-# Gráficos de las variables más informativas comparando distribución
-# entre hogares pobres y no pobres.
+# Detectar multicolinealidad y relaciones entre los predictores clave
+# que usan los modelos finales.
 
-cat("\n========================================\n")
-cat("BLOQUE 5: VISUALIZACIONES CLAVE\n")
-cat("========================================\n")
-
-# --- 5.1 Nivel educativo del jefe del hogar ---
-# Hipótesis: mayor educación del jefe = mayor capacidad de generar
-# ingreso = menor probabilidad de pobreza.
-
-ggplot(train, aes(x = factor(nivel_educ_jefe), fill = pobre_f)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = percent) +
-  scale_fill_manual(values = c("No pobre" = "#2E86AB", "Pobre" = "#E84855")) +
-  labs(
-    title    = "Proporción de pobreza por nivel educativo del jefe de hogar",
-    subtitle = "1=Ninguno, 2=Preescolar, 3=Primaria, 4=Secundaria, 5=Media, 6=Superior",
-    x = "Nivel educativo del jefe", y = "Proporción",
-    fill = NULL
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "bottom")
-
-ggsave(file.path(dir_figures, "03_educ_jefe_vs_pobre.png"), width = 8, height = 5, dpi = 150)
-
-
-# --- 5.2 Ratio de dependencia ---
-# Hipótesis: hogares con más dependientes (menores + adultos mayores)
-# por persona en edad productiva tienen menos ingresos per cápita.
-
-ggplot(train, aes(x = pobre_f, y = ratio_depend, fill = pobre_f)) +
-  geom_boxplot(outlier.alpha = 0.1) +
-  scale_fill_manual(values = c("No pobre" = "#2E86AB", "Pobre" = "#E84855")) +
-  labs(
-    title = "Ratio de dependencia por condición de pobreza",
-    subtitle = "(Menores de 15 + Mayores de 65) / Personas en edad productiva",
-    x = NULL, y = "Ratio de dependencia",
-    fill = NULL
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "none")
-
-ggsave(file.path(dir_figures, "04_ratio_depend_vs_pobre.png"), width = 7, height = 5, dpi = 150)
-
-
-# --- 5.3 Proporción de cotizantes a pensión ---
-# Hipótesis: hogares donde nadie cotiza a pensión tienden a estar en
-# empleos informales con ingresos más bajos e inestables.
-
-ggplot(train, aes(x = pobre_f, y = prop_cotiza_pension, fill = pobre_f)) +
-  geom_boxplot(outlier.alpha = 0.1) +
-  scale_fill_manual(values = c("No pobre" = "#2E86AB", "Pobre" = "#E84855")) +
-  labs(
-    title = "Proporción de miembros que cotizan pensión",
-    subtitle = "Proxy de formalidad laboral del hogar",
-    x = NULL, y = "Proporción que cotiza pensión",
-    fill = NULL
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "none")
-
-ggsave(file.path(dir_figures, "05_pension_vs_pobre.png"), width = 7, height = 5, dpi = 150)
-
-
-# --- 5.4 Tasa de ocupación del hogar ---
-# Hipótesis: a mayor proporción de personas ocupadas,
-# mayor ingreso total y menor probabilidad de pobreza.
-
-ggplot(train, aes(x = pobre_f, y = tasa_ocupacion, fill = pobre_f)) +
-  geom_boxplot(outlier.alpha = 0.1) +
-  scale_fill_manual(values = c("No pobre" = "#2E86AB", "Pobre" = "#E84855")) +
-  labs(
-    title = "Tasa de ocupación del hogar por condición de pobreza",
-    subtitle = "Proporción de personas en edad de trabajar que están ocupadas",
-    x = NULL, y = "Tasa de ocupación",
-    fill = NULL
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "none")
-
-ggsave(file.path(dir_figures, "06_tasa_ocup_vs_pobre.png"), width = 7, height = 5, dpi = 150)
-
-
-# --- 5.5 Proporción con régimen subsidiado de salud ---
-# Hipótesis: mayor proporción de subsidiados = mayor vulnerabilidad.
-
-ggplot(train %>% filter(!is.na(prop_subsidiado)),
-       aes(x = pobre_f, y = prop_subsidiado, fill = pobre_f)) +
-  geom_boxplot(outlier.alpha = 0.1) +
-  scale_fill_manual(values = c("No pobre" = "#2E86AB", "Pobre" = "#E84855")) +
-  labs(
-    title = "Proporción en régimen subsidiado de salud",
-    subtitle = "Mayor proporción de subsidiados = mayor vulnerabilidad económica",
-    x = NULL, y = "Proporción en régimen subsidiado",
-    fill = NULL
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "none")
-
-ggsave(file.path(dir_figures, "07_subsidiado_vs_pobre.png"), width = 7, height = 5, dpi = 150)
-
-
-# --- 5.6 Número de menores de 18 años ---
-# Hipótesis: más menores = más dependientes sin ingreso = mayor pobreza.
-
-ggplot(train, aes(x = factor(n_menores_18), fill = pobre_f)) +
-  geom_bar(position = "fill") +
-  scale_y_continuous(labels = percent) +
-  scale_fill_manual(values = c("No pobre" = "#2E86AB", "Pobre" = "#E84855")) +
-  labs(
-    title = "Proporción de pobreza según número de menores en el hogar",
-    x = "Número de menores de 18 años", y = "Proporción",
-    fill = NULL
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "bottom")
-
-ggsave(file.path(dir_figures, "08_menores_vs_pobre.png"), width = 8, height = 5, dpi = 150)
-
-
-# ==============================================================================
-# BLOQUE 6: MATRIZ DE CORRELACIONES ENTRE PREDICTORES
-# ==============================================================================
-# Detectar multicolinealidad: si dos variables están muy correlacionadas
-# entre sí, incluir ambas en un modelo lineal puede ser redundante.
-
-cat("\n========================================\n")
-cat("BLOQUE 6: MATRIZ DE CORRELACIONES\n")
-cat("========================================\n")
+cat("\n== Grafico 9: Matriz de correlaciones ==\n")
 
 vars_matriz <- c(
-  "nivel_educ_jefe", "nivel_educ_max", "nivel_educ_prom",
-  "ratio_depend", "n_menores_18", "num_personas",
-  "tasa_ocupacion", "tasa_desempleo", "prop_informal",
+  "horas_prom", "arriendo_estimado", "tasa_empleo_total",
+  "prop_contributivo", "menores_por_ocupado",
   "prop_cotiza_pension", "prop_subsidiado",
-  "prop_afil_salud", "prop_asalariado",
-  "edad_jefe", "num_cuartos_dorm", "pobre"
+  "nivel_educ_prom", "edad_prom", "hacinamiento",
+  "cuartos_pc", "prop_asalariado", "prop_informal",
+  "n_ocupados", "num_personas", "pobre"
 )
 
-mat_corr <- train %>%
-  select(all_of(vars_matriz)) %>%
+mat_corr <- train |>
+  select(any_of(vars_matriz)) |>
   cor(use = "pairwise.complete.obs")
 
-png(file.path(dir_figures, "09_matriz_correlaciones.png"), width = 900, height = 800, res = 120)
+png(file.path(dir_figures, "09_matriz_correlaciones.png"),
+    width = 1000, height = 900, res = 120, bg = "white")
 corrplot(mat_corr,
          method  = "color",
          type    = "lower",
          tl.col  = "black",
-         tl.cex  = 0.8,
+         tl.cex  = 0.75,
          addCoef.col = "black",
-         number.cex  = 0.6,
-         title   = "Matriz de correlaciones entre predictores clave",
+         number.cex  = 0.55,
+         title   = "Correlaciones entre predictores clave",
          mar     = c(0, 0, 2, 0))
 dev.off()
 
 
 # ==============================================================================
-# BLOQUE 7: RESUMEN Y CONCLUSIONES
+# GUARDAR TABLAS EN ARCHIVO DE TEXTO
+# ==============================================================================
+
+cat("\n== Guardando tablas en resultados_eda.txt ==\n")
+
+# Tabla de medias por grupo
+vars_comparar <- c(
+  "num_cuartos", "cuartos_pc", "hacinamiento",
+  "num_personas", "n_menores_18", "menores_por_ocupado",
+  "edad_jefe", "prop_mujeres", "ratio_depend",
+  "nivel_educ_max", "nivel_educ_jefe", "nivel_educ_prom",
+  "n_ocupados", "tasa_ocupacion", "tasa_empleo_total", "tasa_desempleo",
+  "prop_asalariado", "prop_informal", "prop_contributivo",
+  "prop_subsidiado", "prop_cotiza_pension",
+  "horas_prom", "antiguedad_prom",
+  "alguno_subsidio", "alguno_remesas"
+)
+
+tabla_medias <- train |>
+  group_by(pobre_f) |>
+  summarise(
+    across(any_of(vars_comparar), ~ mean(.x, na.rm = TRUE)),
+    .groups = "drop"
+  ) |>
+  pivot_longer(-pobre_f, names_to = "variable", values_to = "media") |>
+  pivot_wider(names_from = pobre_f, values_from = media) |>
+  mutate(
+    diferencia = Pobre - `No pobre`,
+    ratio      = round(Pobre / `No pobre`, 2)
+  ) |>
+  arrange(desc(abs(diferencia)))
+
+sink(file.path(dir_figures, "resultados_eda.txt"))
+cat("=== RESUMEN DESCRIPTIVO GENERAL ===\n\n")
+cat("Hogares:", nrow(train), "\n")
+cat("Predictores:", ncol(train) - 2, "(excluyendo id y pobre)\n")
+cat("Prevalencia pobreza:", round(mean(train$pobre) * 100, 1), "%\n")
+cat("Ratio No pobre : Pobre =",
+    round(tabla_pobre$n[1] / tabla_pobre$n[2], 1), ": 1\n\n")
+
+cat("\n=== POBREZA POR ZONA ===\n\n")
+print(zona_pobre)
+
+cat("\n\n=== POBREZA POR DEPARTAMENTO ===\n\n")
+print(dpto_pobre)
+
+cat("\n\n=== MEDIAS POR GRUPO (POBRES vs NO POBRES) ===\n\n")
+print(tabla_medias, n = 30)
+
+cat("\n\n=== TOP 15 CORRELACIONES CON POBREZA ===\n\n")
+print(head(correlaciones, 15))
+sink()
+
+
+# ==============================================================================
+# RESUMEN
 # ==============================================================================
 
 cat("\n========================================\n")
-cat("BLOQUE 7: RESUMEN DE HALLAZGOS\n")
+cat("EDA completo\n")
 cat("========================================\n")
-
-cat("
-PREGUNTA 1: ¿Qué variables deberían predecir pobreza?
-------------------------------------------------------
-Desde razonamiento económico, las variables más relevantes son:
-- Educación del jefe del hogar (capital humano -> capacidad de ingreso)
-- Tasa de ocupación del hogar (más ocupados -> más fuentes de ingreso)
-- Informalidad laboral (empleo informal -> ingresos bajos e inestables)
-- Ratio de dependencia (más dependientes -> menos ingreso per cápita)
-- Acceso a seguridad social (pensión, salud contributiva -> empleo formal)
-- Número de menores (costo de crianza sin ingreso adicional)
-- Zona (urbano/rural -> acceso a mercados laborales, servicios)
-
-PREGUNTA 2: ¿Qué confirman o desafían los datos?
--------------------------------------------------
-Revisa la tabla de medias del Bloque 3 y los gráficos del Bloque 5.
-Las variables que mostraron mayor separación entre grupos fueron:
-[Completa esto después de correr el script y ver los resultados]
-
-PREGUNTA 3: ¿Qué tan severo es el desbalance y qué implica?
-------------------------------------------------------------
-- El desbalance es 4:1 (80% no pobres, 20% pobres)
-- Esto implica que:
-  * Accuracy NO es buena métrica (80% sin hacer nada)
-  * Usar F1 score es apropiado porque penaliza modelos que ignoran
-    la clase minoritaria
-  * Estrategias a considerar en el modelado:
-    - Ajustar el threshold de clasificación (no usar 0.5 por defecto)
-    - Upsampling/downsampling en el entrenamiento
-    - Usar metric='Sens' o summaryFunction=twoClassSummary en caret
-    - Usar class weights en algoritmos que lo soporten
-")
-
-cat("\n¡EDA completo! Los gráficos se guardaron en la carpeta de trabajo.\n")
-cat("Archivos generados:\n")
+cat("Graficos guardados en:", dir_figures, "\n")
 cat("  01_desbalance_clases.png\n")
-cat("  02_correlaciones_pobre.png\n")
-cat("  03_educ_jefe_vs_pobre.png\n")
-cat("  04_ratio_depend_vs_pobre.png\n")
-cat("  05_pension_vs_pobre.png\n")
-cat("  06_tasa_ocup_vs_pobre.png\n")
-cat("  07_subsidiado_vs_pobre.png\n")
-cat("  08_menores_vs_pobre.png\n")
+cat("  02_pobreza_zona.png\n")
+cat("  03_pobreza_dpto.png\n")
+cat("  04_educ_jefe_vs_pobre.png\n")
+cat("  05_formalidad_vs_pobre.png\n")
+cat("  06_menores_por_ocupado.png\n")
+cat("  07_hacinamiento.png\n")
+cat("  08_correlaciones_pobre.png\n")
 cat("  09_matriz_correlaciones.png\n")
-# Guardar todas las tablas en un archivo de texto
-tryCatch({
-  sink(file.path(dir_figures, "resultados_eda.txt"))
-  cat("=== RESUMEN DESCRIPTIVO GENERAL ===\n\n")
-  print(skim_result)
-  cat("\n\n=== VARIABLES CON MAS DE 10% NAs ===\n\n")
-  print(vars_na)
-  cat("\n\n=== MEDIAS POR GRUPO (POBRES vs NO POBRES) ===\n\n")
-  print(tabla_medias, n = 30)
-  cat("\n\n=== TOP 20 CORRELACIONES CON POBREZA ===\n\n")
-  print(head(correlaciones, 20))
-  sink()
-}, error = function(e) {
-  if (sink.number() > 0) sink()
-  message("Error guardando resultados: ", e$message)
-})
+cat("  resultados_eda.txt\n")
