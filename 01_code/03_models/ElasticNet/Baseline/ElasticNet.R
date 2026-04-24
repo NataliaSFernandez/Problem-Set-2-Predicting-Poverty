@@ -162,7 +162,7 @@ optimizar_threshold <- function(modelo, y_real_num) {
 # -- 7. Funcion para correr una especificacion completa ----------------------
 correr_elastic_net <- function(X_train, X_test, y_fct, y_num, model_id, notas) {
 
-  dir_model <- file.path("02_outputs/models/EN", model_id)
+  dir_model <- file.path("02_outputs/models/EN/Baseline", model_id)
   dir_create(dir_model, recurse = TRUE)
 
   message("\n========================================")
