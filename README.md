@@ -132,28 +132,32 @@ Mejor modelo de cada algoritmo, ordenados por F1 score:
 
 ### Deck 1 (Best Model Deep Dive): XGB_008
 
-| Slide | Figura/Tabla | Fuente |
-|-------|-------------|--------|
-| Resumen del mejor modelo | Especificación + F1 Kaggle | `02_outputs/model_registry.csv` |
-| Datos: desbalance de clases | Gráfico de barras 80/20 | `02_outputs/figures/data_explore/01_desbalance_clases.png` |
-| Datos: pobreza por zona | Urbano vs rural | `02_outputs/figures/data_explore/02_pobreza_zona.png` |
-| Datos: correlaciones clave | Top 15 correlaciones con pobreza | `02_outputs/figures/data_explore/08_correlaciones_pobre.png` |
-| Mejor modelo: importancia de variables | Gráfico de importancia | `02_outputs/models/XGBoost/XGB_008/varimp.png` |
-| Mejor modelo: tuning de HP | Comparación de configuraciones | `02_outputs/models/XGBoost/XGB_008/comparison_specs.png` |
-| Mejor modelo: threshold | Curva F1 vs threshold | `02_outputs/models/XGBoost/XGB_008/threshold.png` |
-| Mejor modelo: ROC | Curva ROC | `02_outputs/models/XGBoost/XGB_008/roc.png` |
-| Implicaciones de política | Trade-off precisión-recall | `02_outputs/models/XGBoost/XGB_008/prcurve.png` |
+| Slide | Contenido | Fuente |
+|-------|-----------|--------|
+| Visión General del Mejor Modelo | Especificación XGB_008 + métricas | `02_outputs/model_registry.csv` |
+| Diagnóstico: Errores del Modelo | Confusion matrix, FN vs FP | `02_outputs/models/XGBoost/XGB_008/` |
+| Balance Precisión-Recall y Threshold | Curva threshold, justificación th=0.36 | `02_outputs/models/XGBoost/XGB_008/threshold.png` |
+| Los Datos crudos | Pipeline de construcción + desbalance | `02_outputs/figures/data_explore/01_desbalance_clases.png` |
+| Proceso de Selección (4 fases) | Baseline, feature selection, reentrenamiento, balanceo | Documentado en scripts de cada modelo |
+| Por Qué Ciertos Algoritmos Funcionan Mejor | No linealidades, dimensionalidad, correlación, geografía | Síntesis de todos los modelos |
 
 ### Deck 2 (Comparación de Algoritmos)
 
-| Slide | Figura/Tabla | Fuente |
-|-------|-------------|--------|
-| Resumen del mejor modelo | Especificación + F1 Kaggle | `02_outputs/model_registry.csv` |
-| Datos: educación vs pobreza | Barras apiladas por nivel educativo | `02_outputs/figures/data_explore/04_educ_jefe_vs_pobre.png` |
-| Datos: formalidad vs pobreza | Boxplot régimen contributivo | `02_outputs/figures/data_explore/05_formalidad_vs_pobre.png` |
-| Comparación: tabla resumen | F1/Precisión/Recall de los 6 modelos | `02_outputs/model_registry.csv` |
-| Comparación: XGB vs RF | ROC, threshold, importancia de variables | `02_outputs/models/XGBoost/XGB_008/`, `02_outputs/models/RandomForest/RF_006/` |
-| Conclusión: trade-off de política | Interpretabilidad vs rendimiento | Síntesis de todos los modelos |
+| Slide | Contenido | Fuente |
+|-------|-----------|--------|
+| Visión General del Mejor Modelo | Especificación XGB_008 + métricas | `02_outputs/model_registry.csv` |
+| Diagnóstico: Errores del Modelo | Confusion matrix XGB_008 | `02_outputs/models/XGBoost/XGB_008/` |
+| Balance Precisión-Recall y Threshold | Justificación th=0.36 | `02_outputs/models/XGBoost/XGB_008/threshold.png` |
+| Por Qué Ciertos Algoritmos Funcionan Mejor | 6 factores explicativos | Síntesis de todos los modelos |
+| Los Datos crudos + Pipeline | Construcción de variables + desbalance | `02_outputs/figures/data_explore/` |
+| Proceso de Selección (4 fases) | Baseline, features RF, reentrenamiento, balanceo | Documentado en scripts |
+| Resumen de Algoritmos | Tabla comparativa 6 modelos | `02_outputs/model_registry.csv` |
+| Deep Dive: XGB vs Random Forest | Tabla + ROC comparativo | `02_outputs/models/XGBoost/XGB_008/roc.png`, `02_outputs/models/RandomForest/RF_006/roc.png` |
+| Por Qué XGBoost Supera al RF | Boosting vs bagging, regularización, threshold | Síntesis |
+| Deep Dive: XGB vs Elastic Net | Tabla comparativa + ROC | `02_outputs/models/XGBoost/XGB_008/roc.png`, `02_outputs/models/EN/Baseline/EN_001A/` |
+| Por Qué XGBoost Supera al EN | No linealidades, interacciones, cuándo preferir EN | Síntesis |
+| Conclusión: Qué Modelo Recomendar | Trade-off complejidad vs interpretabilidad | Síntesis de todos los modelos |
+| Conclusiones Finales | 6 hallazgos clave + link GitHub | `02_outputs/model_registry.csv` |
 
 ## Decisiones de Diseño
 
