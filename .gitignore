@@ -60,3 +60,4 @@ kaggle.json
 #--Outputs----------
 #02_outputs/
 *.rds
+.DS_Store
