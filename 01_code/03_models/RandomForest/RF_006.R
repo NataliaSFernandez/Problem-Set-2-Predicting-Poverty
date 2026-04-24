@@ -48,8 +48,24 @@
 # TIEMPO ESTIMADO: ~40-50 min con 9+ cores
 #   Fase 1: ~25 min  |  Fase 2: ~15 min  |  Fase 3: ~3 min
 #
+# NOTA GEOGRÁFICA:
+#   Bogotá (dpto == "11") está excluida del conjunto de entrenamiento.
+#   La exclusión se realiza en la fuente: train_final.rds ya no contiene
+#   observaciones de Bogotá (n = 154 393, sin las ~10 567 filas de Bogotá).
+#   Este script no aplica ningún filtro adicional; la cobertura geográfica
+#   queda determinada por el archivo procesado.
+#
+# ALINEAMIENTO CON XGB_007:
+#   Las variables excluidas son las mismas que en XGB_007 (16 construidas + bogota):
+#     • Cuadráticas, logarítmicas e interacciones: excluidas en ambos modelos.
+#     • "bogota": incluida en VARS_EXCLUIR por consistencia con XGB_007, aunque
+#       ya no existe en train_final.rds (la columna fue eliminada en la fuente).
+#   RF_006 conserva tanto componentes granulares como índices compuestos (92 predictores),
+#   a diferencia de XGB_008 spec A (75) que elimina los índices. Para árboles de decisión
+#   la redundancia entre índices y componentes no es problemática.
+#
 # INPUTS:
-#   00_data/processed/train_final.rds
+#   00_data/processed/train_final.rds  (excluye Bogotá)
 #   00_data/processed/test_final.rds
 #
 # OUTPUTS:
@@ -164,6 +180,9 @@ X_test       <- X_test_raw  |> select(all_of(cols_comunes))
 #Se excluyen variables cuadráticas, logarítmicas, y de interacción, que no aportan
 
 VARS_EXCLUIR <- c(
+  # Igual que XGB_007: cuadráticas, logarítmicas e interacciones construidas.
+  # Los árboles pueden recrear estas transformaciones internamente, por lo que
+  # incluirlas solo añade ruido sin ganancia predictiva.
   # Cuadráticas de capital humano (Bloque 3)
   "educ_jefe_sq",
   "educ_prom_sq",
@@ -183,7 +202,10 @@ VARS_EXCLUIR <- c(
   "rural_x_cta_propia",
   "educ_x_rural",
   "subsidiado_x_menores",
-  "jefe_mayor_pension"
+  "jefe_mayor_pension",
+  # Dummy constante tras excluir Bogotá desde la fuente (varianza nula).
+  # No existe en train_final.rds; se declara por consistencia con XGB_007.
+  "bogota"
 )
 
 # -- Eliminar variables de VARS_EXCLUIR --------------------------------------
