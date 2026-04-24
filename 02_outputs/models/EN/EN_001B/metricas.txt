@@ -1,0 +1,106 @@
+=== ELASTIC NET --  EN_001B  ===
+
+Predictores: 69 
+alpha: 1 
+lambda: 1e-04 
+Threshold optimo: 0.35 
+F1 OOF: 0.6872 
+Precision OOF: 0.6349 
+Recall OOF: 0.7489 
+AUC-ROC: 0.9156 
+
+-- Confusion Matrix (OOF) --
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     No    Yes
+       No  108625   8035
+       Yes  13775  23958
+                                         
+               Accuracy : 0.8587         
+                 95% CI : (0.857, 0.8605)
+    No Information Rate : 0.7928         
+    P-Value [Acc > NIR] : < 2.2e-16      
+                                         
+                  Kappa : 0.5968         
+                                         
+ Mcnemar's Test P-Value : < 2.2e-16      
+                                         
+            Sensitivity : 0.7489         
+            Specificity : 0.8875         
+         Pos Pred Value : 0.6349         
+         Neg Pred Value : 0.9311         
+             Prevalence : 0.2072         
+         Detection Rate : 0.1552         
+   Detection Prevalence : 0.2444         
+      Balanced Accuracy : 0.8182         
+                                         
+       'Positive' Class : Yes            
+                                         
+
+-- Todos los coeficientes no cero --
+               variable   coeficiente
+1     arriendo_estimado -3.7465079246
+2            horas_prom -0.8149416129
+3            n_ocupados -0.7471669873
+4      log_num_personas  0.7312225885
+5       formal_estricto -0.7250627628
+6       prop_subsidiado  0.6933369232
+7       prop_pensionado -0.6319221824
+8     indice_formalidad -0.6153487712
+9         prop_informal  0.5176760038
+10      num_personas_ug  0.4871553261
+11       prop_jornalero -0.4509069720
+12    tasa_empleo_total -0.4009645005
+13       tasa_ocupacion  0.3511129517
+14          num_cuartos -0.3193919288
+15        educ_x_formal  0.3125288726
+16      prop_afil_salud -0.2924179865
+17      prop_cta_propia -0.2796742445
+18          n_inactivos -0.2783246371
+19    prop_gran_empresa -0.2485417098
+20         educ_jefe_sq -0.2322710437
+21     n_fuentes_no_lab -0.2175905915
+22        tipo_tenencia  0.2136422788
+23          prop_patron -0.2014270096
+24      nivel_educ_prom -0.1894849535
+25    menores_x_desocup  0.1770450815
+26         tasa_ocup_sq -0.1633737205
+27     prop_fam_sin_rem  0.1561704638
+28    dep_empleo_formal  0.1505388332
+29    prop_microempresa  0.1490119467
+30       prop_subempleo  0.1441095056
+31    proteccion_social  0.1399967697
+32      prop_2do_empleo -0.1361634871
+33      antiguedad_alta -0.1214130306
+34       prop_domestico -0.1202653293
+35        dep_educacion -0.0953416693
+36   hogar_monoparental  0.0843412026
+37            edad_prom -0.0718356868
+38        log_n_menores  0.0715714244
+39        multi_privado  0.0644634922
+40       n_desempleados -0.0603736703
+41       nivel_educ_max -0.0575797114
+42            edad_jefe -0.0522283484
+43      hacinamiento_sq  0.0463248929
+44        n_adultos_may -0.0426100568
+45      dep_dependencia -0.0417662206
+46         dep_vivienda -0.0393057126
+47       privado_severo  0.0382344020
+48       dep_proteccion -0.0361834527
+49           cuartos_pc -0.0353245671
+50      antiguedad_prom  0.0349959485
+51    depend_x_informal  0.0339152887
+52         educ_prom_sq -0.0301231622
+53    valor_alojamiento -0.0277147732
+54         prop_mujeres  0.0272598025
+55         desprotegido -0.0262538181
+56      ratio_depend_sq  0.0258559438
+57           mujer_jefa  0.0236805353
+58       tasa_desempleo  0.0186011421
+59      arriendo_pagado  0.0122266041
+60      nivel_educ_jefe  0.0099640205
+61 tiene_ingreso_no_lab  0.0084222142
+62 subsidiado_x_menores  0.0067748563
+63     num_cuartos_dorm  0.0027382573
+64          educ_x_ocup -0.0000916376
