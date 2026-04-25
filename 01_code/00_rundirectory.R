@@ -27,6 +27,18 @@ Tiempo estimado: 4-6 horas
 ================================================================================
 \n")
 
+# -- Instalar paquetes necesarios si no están disponibles --------------------
+paquetes <- c("tidyverse", "caret", "glmnet", "ranger", "xgboost", "e1071",
+              "pROC", "MLmetrics", "themis", "corrplot", "skimr", "scales",
+              "janitor", "fs")
+
+for (pkg in paquetes) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    message("Instalando paquete: ", pkg)
+    install.packages(pkg, repos = "https://cloud.r-project.org")
+  }
+}
+
 # Tiempo de inicio
 start_time <- Sys.time()
 
